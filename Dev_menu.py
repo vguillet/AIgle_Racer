@@ -11,9 +11,9 @@ import time
 import airsim
 
 # Own modules
-from AIgle_Vision.Vision.Camera import Camera
-from AIgle_Vision.Vision.Postprocessor import Postprocessor
-from AIgle_Vision.Navigation.simple_predefined_flight import flight_navigation
+from AIgle_Project.src.Vision.Camera import Camera
+from AIgle_Project.src.Vision.Postprocessor import Postprocessor
+from AIgle_Project.src.Navigation.simple_predefined_flight import flight_navigation
 
 
 __version__ = '1.1.1'
