@@ -150,17 +150,26 @@ class DQL_agent(RL_agent_abc, Agent):
                       round(current_state[0][2] + action[0][2], 1)],
                       action[1]]
 
+        # --> Limiting top and low
+        # TODO: Improve limits
         if next_state[0][2] < -6:
             next_state[0][2] = -6
+        elif next_state[0][2] >= 3.5:
+            next_state[0][2] = 3.5
 
         # --> Move to target
         self.move(next_state)
 
+        collision = self.collision
+
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.hidden_rl_state, self.collision)
+        reward = self.reward_function.get_reward(self.hidden_rl_state, collision, self.age)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.hidden_rl_state, self.collision)
+        done = self.reward_function.check_if_done(self.hidden_rl_state, collision, self.age)
+
+        if not done:
+            self.age += 1
 
         return self.rl_state, reward, done
 
@@ -171,7 +180,8 @@ class DQL_agent(RL_agent_abc, Agent):
     def train(self, terminal_state, target_update_counter):
         # --> Check whether memory contains enough experience
         if len(self.memory) < self.settings.rl_behavior_settings.min_replay_memory_size:
-            return
+            return target_update_counter
+
         # --> Randomly sample minibatch from the memory
         minibatch = random.sample(self.memory, self.settings.rl_behavior_settings.minibatch_size)
 

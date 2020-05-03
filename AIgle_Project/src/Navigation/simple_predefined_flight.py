@@ -57,10 +57,10 @@ class flight_navigation():
         #                                      airsim.DrivetrainType.ForwardOnly,
         #                                      airsim.YawMode(False, 0), 20, 1)
 
-        self.client.moveToPositionAsync(0, -20, -2, 4).join()
+        self.client.moveToPositionAsync(0, -20, -2, 10).join()
         time.sleep(2)
 
-        self.client.moveToPositionAsync(0, -27, -2, 2).join()
+        self.client.moveToPositionAsync(0, -20, 4, 10).join()
         # time.sleep(2)
         # self.client.moveToPositionAsync(0, -28.5, -2, 1).join()
         # time.sleep(2)

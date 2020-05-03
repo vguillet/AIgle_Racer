@@ -22,15 +22,14 @@ class Reward_function:
     def __init__(self):
         return
 
-    def get_reward(self, state, collision):
-
+    def get_reward(self, state, collision, age):
         if collision is True:
             # --> Negative reward if a collision occurred
             reward = -10
 
         else:
             # --> Set default reward to 0
-            reward = 0
+            reward = 1000
 
             # --> Check x position
             if -2.65 <= state[0][0] <= 3.27:
@@ -52,7 +51,11 @@ class Reward_function:
 
         return reward
 
-    def check_if_done(self, state, collision):
+    def check_if_done(self, state, collision, age):
+        # TODO: Connect age to settings
+        if age >= 10:
+            return True
+
         if collision is True:
             # --> Kill run if collision occurred
             return True

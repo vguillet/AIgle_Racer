@@ -35,6 +35,7 @@ class Agent:
         # --> Setup Agent properties
         self.client = client
         self.name = name
+        self.age = 0
 
         return
 
@@ -44,22 +45,17 @@ class Agent:
 
     @property
     def collision(self):
-        return self.state.collision.has_collided
+        return self.client.simGetCollisionInfo().has_collided
 
     def move(self, new_state):
-        print("=======================> Move", new_state[0][0],
-                                        new_state[0][1],
-                                        new_state[0][2],
-                                        new_state[1])
-
         # # --> Move drone to specified position
         self.client.moveToPositionAsync(new_state[0][0],
                                         new_state[0][1],
                                         new_state[0][2],
                                         new_state[1]
-                                        )
+                                        ).join()
 
-        time.sleep(1.5)
+        # time.sleep(1.5)
 
         # result = self.client.moveOnPathAsync([airsim.Vector3r(new_state[0][0],
         #                                                       new_state[0][1],
@@ -71,7 +67,7 @@ class Agent:
         return
 
     def reset(self, random_starting_pos=False):
-        print("=======================> RESET")
+        self.age = 0
 
         # TODO: Implement random offset starting point
         # --> Reset Drone to starting position

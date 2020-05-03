@@ -50,15 +50,19 @@ class DQL_image_based_navigation:
         print(model_io_shape)
 
         # --> Create main model
-        model = DQL_models().model_1(model_io_shape[0],
-                                     model_io_shape[1])
+        main_model = DQL_models().model_1(model_io_shape[0],
+                                          model_io_shape[1])
 
         # --> Create target network
         target_model = DQL_models().model_1(model_io_shape[0],
                                             model_io_shape[1])
-        # --. Set target network weights equal to main model weights
-        target_model.set_weights(model.get_weights())
-        
+        # --> Set target network weights equal to main model weights
+        target_model.set_weights(main_model.get_weights())
+
+        # --> Assign models to agent
+        agent.assigned_main_model = main_model
+        agent.assigned_target_model = target_model
+
         # ----- Create trackers
         # --> Used to count when to update target network with main network's weights
         target_update_counter = 0
@@ -67,9 +71,7 @@ class DQL_image_based_navigation:
         ep_rewards = []
 
         # --> Iterate over episodes
-        # for episode in tqdm(range(1, settings.rl_behavior_settings.episodes + 1), ascii=True, unit='episodes'):
-        for episode in range(1, settings.rl_behavior_settings.episodes + 1):
-            print("================> EPISODE", episode)
+        for episode in tqdm(range(1, settings.rl_behavior_settings.episodes + 1), ascii=True, unit='episodes'):
             # --> Update tensorboard step every episode
             # TODO: Fix tensorboard
             # agent.tensorboard.step = episode
@@ -116,6 +118,7 @@ class DQL_image_based_navigation:
                 current_state = new_state
                 step += 1
 
+            # print("\n", episode_reward)
             # Append episode reward to a list and log stats (every given number of episodes)
             # ep_rewards.append(episode_reward)
             # if not episode % AGGREGATE_STATS_EVERY or episode == 1:

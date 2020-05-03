@@ -38,11 +38,10 @@ class RL_behavior_settings:
 
         # ---- Agent properties
         self.memory_size = 5_000
-        self.min_replay_memory_size = 1_000
+        self.min_replay_memory_size = 250
 
         # ---- Run settings
         self.episodes = 20_000
-        self.cycle_length = 1000
 
         # ---- Cycle settings
         self.cyclic_training = False
@@ -51,13 +50,13 @@ class RL_behavior_settings:
         self.nb_bucket = 5
 
         self.learning_rate = 0.5        # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
-        self.discount = 0.75            #                   short-term reward 0 <-- x --> 1 long-term reward
+        self.discount = 0.65            #                   short-term reward 0 <-- x --> 1 long-term reward
 
         self.minibatch_size = 64
         self.update_target_every = 5
 
         # ---- Exploration settings
-        self.epsilon = 10               # Probability (percent) of taking random action
+        self.epsilon = 30               # Probability (percent) of taking random action
         self.random_starting_pos = False
 
         # ---- Decay settings
