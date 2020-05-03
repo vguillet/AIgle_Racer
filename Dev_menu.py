@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 import time
+import pprint
 
 # Libs
 import airsim
@@ -52,6 +53,13 @@ postprocessor_1 = Postprocessor(average_smooth=0,
 while True:
 
     navigation.run()
+
+    while True:
+        state = client.getMultirotorState()
+        s = pprint.pformat(state.kinematics_estimated.position)
+        print("state: %s \n" % s)
+        time.sleep(1)
+
     # center_cam.display_camera_view()
-    center_cam.run(record=False,
-                   postprocessor=postprocessor_1.constructed_postprocessor)
+    # center_cam.run(record=False,
+    #                postprocessor=postprocessor_1.constructed_postprocessor)
