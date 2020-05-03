@@ -7,15 +7,20 @@
 # Built-in/Generic Imports
 import os
 import sys
+import time
 
 # Libs
 import airsim
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 # Own modules
+from AIgle_Project.Settings.SETTINGS import SETTINGS
+from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
+from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 from AIgle_Project.src.Navigation.DQL.DQL_agent import DQL_agent
-
+from AIgle_Project.src.Navigation.Models.DQL_models import DQL_models
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -24,159 +29,103 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-import random
-import gym
-from collections import deque
-from keras.models import Model, load_model
-from keras.layers import Input, Dense
-from keras.optimizers import Adam, RMSprop
 
 
-def model(input_shape, action_space):
-    X_input = Input(input_shape)
+class DQL_image_based_navigation:
+    def __init__(self, client):
+        # --> Initialise settings
+        settings = SETTINGS()
+        settings.rl_behavior_settings.gen_dql_settings()
+        
+        # --> Initialise tools
+        ml_tools = ML_tools()
+        rl_tools = RL_tools()
+        
+        # ----- Create agent
+        agent = DQL_agent(client, "")
 
-    # 'Dense' is the basic form of a neural network layer
-    # Input Layer of state size(4) and Hidden Layer with 512 nodes
-    X = Dense(512, input_shape=input_shape, activation="relu", kernel_initializer='he_uniform')(X_input)
+        # ----- Create models
+        model_io_shape = (agent.rl_state.shape, len(agent.action_lst))
 
-    # Hidden layer with 256 nodes
-    X = Dense(256, activation="relu", kernel_initializer='he_uniform')(X)
+        print(model_io_shape)
 
-    # Hidden layer with 64 nodes
-    X = Dense(64, activation="relu", kernel_initializer='he_uniform')(X)
+        # --> Create main model
+        model = DQL_models().model_1(model_io_shape[0],
+                                     model_io_shape[1])
 
-    # Output Layer with # of actions: 2 nodes (left, right)
-    X = Dense(action_space, activation="linear", kernel_initializer='he_uniform')(X)
+        # --> Create target network
+        target_model = DQL_models().model_1(model_io_shape[0],
+                                            model_io_shape[1])
+        # --. Set target network weights equal to main model weights
+        target_model.set_weights(model.get_weights())
+        
+        # ----- Create trackers
+        # --> Used to count when to update target network with main network's weights
+        target_update_counter = 0
+        
+        # --> Episode rewards
+        ep_rewards = []
 
-    model = Model(inputs=X_input, outputs=X, name='CartPole DQN model')
-    model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
-
-    model.summary()
-    return model
-
-
-
-
-class DQNAgent:
-    def __init__(self):
-        self.env = gym.make('CartPole-v1')
-        # by default, CartPole-v1 has max episode steps = 500
-        self.state_size = self.env.observation_space.shape[0]
-        self.action_size = self.env.action_space.n
-        self.EPISODES = 1000
-        self.memory = deque(maxlen=2000)
-
-        self.gamma = 0.95  # discount rate
-        self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.001
-        self.epsilon_decay = 0.999
-        self.batch_size = 64
-        self.train_start = 1000
-
-        # create main model
-        self.model = model(input_shape=(self.state_size,), action_space=self.action_size)
-
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
-        if len(self.memory) > self.train_start:
-            if self.epsilon > self.epsilon_min:
-                self.epsilon *= self.epsilon_decay
-
-    def act(self, state):
-        if np.random.random() <= self.epsilon:
-            return random.randrange(self.action_size)
-        else:
-            return np.argmax(self.model.predict(state))
-
-    def replay(self):
-        if len(self.memory) < self.train_start:
-            return
-        # Randomly sample minibatch from the memory
-        minibatch = random.sample(self.memory, min(len(self.memory), self.batch_size))
-
-        state = np.zeros((self.batch_size, self.state_size))
-        next_state = np.zeros((self.batch_size, self.state_size))
-        action, reward, done = [], [], []
-
-        # do this before prediction
-        # for speedup, this could be done on the tensor level
-        # but easier to understand using a loop
-        for i in range(self.batch_size):
-            state[i] = minibatch[i][0]
-            action.append(minibatch[i][1])
-            reward.append(minibatch[i][2])
-            next_state[i] = minibatch[i][3]
-            done.append(minibatch[i][4])
-
-        # do batch prediction to save speed
-        target = self.model.predict(state)
-        target_next = self.model.predict(next_state)
-
-        for i in range(self.batch_size):
-            # correction on the Q value for the action used
-            if done[i]:
-                target[i][action[i]] = reward[i]
-            else:
-                # Standard - DQN
-                # DQN chooses the max Q value among next actions
-                # selection and evaluation of action is on the target Q Network
-                # Q_max = max_a' Q_target(s', a')
-                target[i][action[i]] = reward[i] + self.gamma * (np.amax(target_next[i]))
-
-        # Train the Neural Network with batches
-        self.model.fit(state, target, batch_size=self.batch_size, verbose=0)
-
-    def load(self, name):
-        self.model = load_model(name)
-
-    def save(self, name):
-        self.model.save(name)
-
-    def run(self):
-        for e in range(self.EPISODES):
-            state = self.env.reset()
-            state = np.reshape(state, [1, self.state_size])
+        # --> Iterate over episodes
+        # for episode in tqdm(range(1, settings.rl_behavior_settings.episodes + 1), ascii=True, unit='episodes'):
+        for episode in range(1, settings.rl_behavior_settings.episodes + 1):
+            print("================> EPISODE", episode)
+            # --> Update tensorboard step every episode
+            # TODO: Fix tensorboard
+            # agent.tensorboard.step = episode
+    
+            # ----- Reset
+            # --> Reset episode reward and step number
+            episode_reward = 0
+            step = 1
+    
+            # --> Reset agent/environment
+            agent.reset()
+            
+            # --> Get initial state
+            current_state = agent.rl_state
+            
+            # --> Reset flag and start iterating until episode ends
             done = False
-            i = 0
+            
+            # ----- Compute new episode parameters
+            learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
+
             while not done:
-                self.env.render()
-                action = self.act(state)
-                next_state, reward, done, _ = self.env.step(action)
-                next_state = np.reshape(next_state, [1, self.state_size])
-                if not done or i == self.env._max_episode_steps - 1:
-                    reward = reward
+                # --> Get a random value
+                if np.random.random() > settings.rl_behavior_settings.epsilon:
+                    # --> Get best action from main model
+                    action = np.argmax(agent.get_qs())
                 else:
-                    reward = -100
-                self.remember(state, action, reward, next_state, done)
-                state = next_state
-                i += 1
-                if done:
-                    print("episode: {}/{}, score: {}, e: {:.2}".format(e, self.EPISODES, i, self.epsilon))
-                    if i == 500:
-                        print("Saving trained model as cartpole-dqn.h5")
-                        self.save("cartpole-dqn.h5")
-                        return
-                self.replay()
+                    # Get random action
+                    action = np.random.randint(0, len(agent.action_lst))
 
-    def test(self):
-        self.load("cartpole-dqn.h5")
-        for e in range(self.EPISODES):
-            state = self.env.reset()
-            state = np.reshape(state, [1, self.state_size])
-            done = False
-            i = 0
-            while not done:
-                self.env.render()
-                action = np.argmax(self.model.predict(state))
-                next_state, reward, done, _ = self.env.step(action)
-                state = np.reshape(next_state, [1, self.state_size])
-                i += 1
-                if done:
-                    print("episode: {}/{}, score: {}".format(e, self.EPISODES, i))
-                    break
+                new_state, reward, done = agent.step(action)
 
+                # --> Transform new continuous state to new discrete state and count reward
+                episode_reward += reward
+                
+                # TODO: Setup render environment
+                # if SHOW_PREVIEW and not episode % AGGREGATE_STATS_EVERY:
+                #     env.render()
+    
+                # Every step we update replay memory and train main network
+                agent.remember(current_state, action, reward, new_state, done)
+                target_update_counter = agent.train(done, target_update_counter)
+    
+                current_state = new_state
+                step += 1
 
-if __name__ == "__main__":
-    agent = DQNAgent()
-    # agent.run()
-    agent.test()
+            # Append episode reward to a list and log stats (every given number of episodes)
+            # ep_rewards.append(episode_reward)
+            # if not episode % AGGREGATE_STATS_EVERY or episode == 1:
+            #     average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:]) / len(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            #     min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            #     max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            #     agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward,
+            #                                    epsilon=epsilon)
+            # 
+            #     # Save model, but only when min reward is greater or equal a set value
+            #     if min_reward >= MIN_REWARD:
+            #         agent.model.save(
+            #             f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')

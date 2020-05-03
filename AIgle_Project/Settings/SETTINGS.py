@@ -9,10 +9,10 @@ Used to combine all setting classes
 # Libs
 
 # Own modules
-from Settings.Print_plot_settings import Print_plot_settings
-from Settings.RL_behavior_settings import RL_behavior_settings
-from Settings.Environment_settings import Environment_settings
-from Settings.Agent_settings import Agent_settings
+from AIgle_Project.Settings.Print_plot_settings import Print_plot_settings
+from AIgle_Project.Settings.RL_behavior_settings import RL_behavior_settings
+from AIgle_Project.Settings.Environment_settings import Environment_settings
+from AIgle_Project.Settings.Agent_settings import Agent_settings
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'

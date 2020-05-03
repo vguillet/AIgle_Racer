@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 import pprint
+import time
 
 # Libs
 import airsim
@@ -35,6 +36,44 @@ class Agent:
         self.client = client
         self.name = name
 
+        return
+
+    @property
+    def state(self):
+        return self.client.getMultirotorState()
+
+    @property
+    def collision(self):
+        return self.state.collision.has_collided
+
+    def move(self, new_state):
+        print("=======================> Move", new_state[0][0],
+                                        new_state[0][1],
+                                        new_state[0][2],
+                                        new_state[1])
+
+        # # --> Move drone to specified position
+        self.client.moveToPositionAsync(new_state[0][0],
+                                        new_state[0][1],
+                                        new_state[0][2],
+                                        new_state[1]
+                                        )
+
+        time.sleep(1.5)
+
+        # result = self.client.moveOnPathAsync([airsim.Vector3r(new_state[0][0],
+        #                                                       new_state[0][1],
+        #                                                       new_state[0][2])],
+        #                                      new_state[1], 150,
+        #                                      airsim.DrivetrainType.ForwardOnly,
+        #                                      airsim.YawMode(False, 0), 20, 1).join()
+
+        return
+
+    def reset(self, random_starting_pos=False):
+        print("=======================> RESET")
+
+        # TODO: Implement random offset starting point
         # --> Reset Drone to starting position
         self.client.reset()
 
@@ -43,29 +82,6 @@ class Agent:
         self.client.armDisarm(True)
         self.client.moveToPositionAsync(0, 0, -2, 3).join()
 
-        return
-
-    def move(self, x, y, z, v):
-        # --> Move drone to specified position
-        self.client.moveToPositionAsync(x, y, z, v,
-                                        150,
-                                        airsim.DrivetrainType.ForwardOnly,
-                                        airsim.YawMode(False, 0), 20, 1).join()
-        return
-
-    def get_state(self, print_state=False):
-        # --> Fetch rotor state
-        state = self.client.getMultirotorState()
-        if print_state:
-            s = pprint.pformat(state.kinematics_estimated.position)
-            print("state: %s \n" % s)
-
-        return state
-
-    def reset_agent(self, random_starting_pos=False):
-        # TODO: Implement random offset starting point
-        # --> Reset Drone to starting position
-        self.client.reset()
         return
 
     def __str__(self):

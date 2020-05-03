@@ -19,20 +19,19 @@ __date__ = '26/04/2020'
 
 
 class RL_agent_abc(ABC):
+    @property
     @abstractmethod
-    def __init__(self):
+    def rl_state(self):
+        return
+
+
+    @property
+    @abstractmethod
+    def action_lst(self):
         return
 
     @abstractmethod
-    def step(self):
-        return
-
-    @abstractmethod
-    def get_action_lst(self):
-        return
-
-    @abstractmethod
-    def get_observation(self):
+    def step(self, action):
         return
 
     @abstractmethod

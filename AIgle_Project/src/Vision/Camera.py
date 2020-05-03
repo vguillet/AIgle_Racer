@@ -82,14 +82,16 @@ class Camera:
 
     def fetch_single_img(self):
         # --> Fetch image from simulation using correct camera
-        image = self.client.simGetImage(self.camera_ref, self.camera_type)
+        response = self.client.simGetImages(
+            [airsim.ImageRequest(self.camera_ref, self.camera_type, False, False)])[0]
+        # image = self.client.simGetImage(self.camera_ref, self.camera_type)
 
         # --> Checking whether obtained image is not none
-        if image is None:
-            print("!!!!! Camera is not returning image, please check airsim for error messages !!!!!")
+        if response is None:
+            print("!!!!! Camera is not returning image, check airsim for error messages !!!!!")
             sys.exit(0)
 
-        return image
+        return response
 
     def fetch_and_record_single_image(self, file_name="Cam_shot"):
         # --> Fetch drone camera image

@@ -15,7 +15,7 @@ import airsim
 from AIgle_Project.src.Vision.Camera import Camera
 from AIgle_Project.src.Vision.Postprocessor import Postprocessor
 from AIgle_Project.src.Navigation.simple_predefined_flight import flight_navigation
-
+from AIgle_Project.src.Navigation.DQL.DQL_algorithm import DQL_image_based_navigation
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -32,7 +32,11 @@ client.simPause(False)
 # --> Setup simulator settings
 # client.simSetTraceLine((255, 0, 0, 1), thickness=3)
 
-# ----- Creation of various code components
+# --> Run image based DQL navigation
+dql_image_based = DQL_image_based_navigation(client)
+
+
+# # ----- Creation of various code components
 # --> Setup navigation
 navigation = flight_navigation(client)
 
@@ -60,6 +64,6 @@ while True:
         print("state: %s \n" % s)
         time.sleep(1)
 
-    # center_cam.display_camera_view()
-    # center_cam.run(record=False,
-    #                postprocessor=postprocessor_1.constructed_postprocessor)
+    center_cam.display_camera_view()
+    center_cam.run(record=False,
+                   postprocessor=postprocessor_1.constructed_postprocessor)
