@@ -26,7 +26,7 @@ __date__ = '26/04/2020'
 
 class flight_navigation():
     def __init__(self, client):
-        # --> Navigation to client
+        # --> Navigation_airsim_vanilla to client
         self.client = client
 
     def run(self):
@@ -39,23 +39,23 @@ class flight_navigation():
         self.client.moveToPositionAsync(0, 0, -2, 3).join()
 
         # --> Set path
-        # result = self.client.moveOnPathAsync([airsim.Vector3r(0, -40, 2),
-        #                                       airsim.Vector3r(-10, -72, 0),
-        #                                       airsim.Vector3r(-25, -65, 4),
-        #                                       airsim.Vector3r(-40, -65, 0),
-        #                                       airsim.Vector3r(-62, -55, 0),
-        #                                       airsim.Vector3r(-65, 30, 0),
-        #                                       airsim.Vector3r(-50, 45, 4),
-        #                                       airsim.Vector3r(-35, 55, 5),
-        #                                       airsim.Vector3r(-10, 40, 5),
-        #                                       airsim.Vector3r(-0, 25, 4),
-        #                                       airsim.Vector3r(0, 0, -2),
-        #                                       airsim.Vector3r(0, 0, -2),
-        #                                       airsim.Vector3r(0, 0, -2),
-        #                                       ],
-        #                                      16, 150,
-        #                                      airsim.DrivetrainType.ForwardOnly,
-        #                                      airsim.YawMode(False, 0), 20, 1)
+        result = self.client.moveOnPathAsync([airsim.Vector3r(0, -40, 2),
+                                               airsim.Vector3r(-10, -72, 0),
+                                               airsim.Vector3r(-25, -65, 4),
+                                               airsim.Vector3r(-40, -65, 0),
+                                               airsim.Vector3r(-62, -55, 0),
+                                               airsim.Vector3r(-65, 30, 0),
+                                               airsim.Vector3r(-50, 45, 4),
+                                               airsim.Vector3r(-35, 55, 5),
+                                               airsim.Vector3r(-10, 40, 5),
+                                               airsim.Vector3r(-0, 25, 4),
+                                               airsim.Vector3r(0, 0, -2),
+                                               airsim.Vector3r(0, 0, -2),
+                                               airsim.Vector3r(0, 0, -2),
+                                               ],
+                                              16, 150,
+                                              airsim.DrivetrainType.ForwardOnly,
+                                              airsim.YawMode(False, 0), 20, 1).join()
 
         self.client.moveToPositionAsync(0, -20, -2, 10).join()
         time.sleep(2)

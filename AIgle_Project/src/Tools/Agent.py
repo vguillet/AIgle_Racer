@@ -23,7 +23,7 @@ __date__ = '30/04/2020'
 # TODO: Implement name-based agent functions
 
 
-class Agent:
+class Agent(object):
     def __init__(self,
                  client,
                  name: "Bot name"):
@@ -72,6 +72,9 @@ class Agent:
         # TODO: Implement random offset starting point
         # --> Reset Drone to starting position
         self.client.reset()
+
+        # --> Restart simulation
+        self.client.simPause(False)
 
         # --> Enable API control and take off
         self.client.enableApiControl(True)

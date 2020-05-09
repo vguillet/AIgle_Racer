@@ -14,12 +14,13 @@ import airsim
 import cv2
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Own modules
 from AIgle_Project.Settings.SETTINGS import SETTINGS
 from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
 from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
-from AIgle_Project.src.Navigation.DQL.DQL_agent import DQL_agent
+from AIgle_Project.src.Navigation.Image_DQL.DQL_agent import DQL_agent
 from AIgle_Project.src.Navigation.Models.DQL_models import DQL_models
 
 __version__ = '1.1.1'
@@ -45,7 +46,7 @@ class DQL_image_based_navigation:
         agent = DQL_agent(client, "")
 
         # ----- Create models
-        model_io_shape = (agent.rl_state.shape, len(agent.action_lst))
+        model_io_shape = (agent.observation.shape, len(agent.action_lst))
 
         print(model_io_shape)
 
@@ -85,12 +86,13 @@ class DQL_image_based_navigation:
             agent.reset()
             
             # --> Get initial state
-            current_state = agent.rl_state
+            current_state = agent.observation
             
             # --> Reset flag and start iterating until episode ends
             done = False
             
             # ----- Compute new episode parameters
+            # TODO: Connect episode parameters
             learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
 
             while not done:
@@ -104,7 +106,7 @@ class DQL_image_based_navigation:
 
                 new_state, reward, done = agent.step(action)
 
-                # --> Transform new continuous state to new discrete state and count reward
+                # --> Count reward
                 episode_reward += reward
                 
                 # TODO: Setup render environment
@@ -113,10 +115,20 @@ class DQL_image_based_navigation:
     
                 # Every step we update replay memory and train main network
                 agent.remember(current_state, action, reward, new_state, done)
+
+                client.simPause(True)
                 target_update_counter = agent.train(done, target_update_counter)
-    
+                client.simPause(False)
+
                 current_state = new_state
                 step += 1
+
+            ep_rewards.append(episode_reward)
+
+            if episode % 10 == 0:
+                plt.plot(ep_rewards)
+                plt.grid()
+                plt.show()
 
             # print("\n", episode_reward)
             # Append episode reward to a list and log stats (every given number of episodes)

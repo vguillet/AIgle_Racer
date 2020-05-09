@@ -21,7 +21,7 @@ __date__ = '26/04/2020'
 class RL_agent_abc(ABC):
     @property
     @abstractmethod
-    def rl_state(self):
+    def observation(self):
         return
 
 

@@ -82,7 +82,7 @@ class DQL_agent(RL_agent_abc, Agent):
             return self.assigned_target_model
 
     @property
-    def rl_state(self):
+    def observation(self):
 
         response = self.camera.fetch_single_img()
 
@@ -92,7 +92,7 @@ class DQL_agent(RL_agent_abc, Agent):
         # reshape array to 4 channel image array H X W X 4
         img_rgb = img1d.reshape(response.height, response.width, 3)
 
-        # original image is fliped vertically
+        # original image is flipped vertically
         img_rgb = np.flipud(img_rgb)
 
         return img_rgb
@@ -137,7 +137,7 @@ class DQL_agent(RL_agent_abc, Agent):
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
-        return self.main_model.predict(np.array(self.rl_state).reshape(-1, *self.rl_state.shape) / 255)[0]
+        return self.main_model.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
 
     def step(self, action):
         # --> Determine action requested
@@ -171,7 +171,7 @@ class DQL_agent(RL_agent_abc, Agent):
         if not done:
             self.age += 1
 
-        return self.rl_state, reward, done
+        return self.observation, reward, done
 
     def remember(self, current_state, action, reward, next_state, done):
         self.memory.append((current_state, action, reward, next_state, done))
@@ -219,7 +219,7 @@ class DQL_agent(RL_agent_abc, Agent):
             x.append(current_state)
             y.append(current_qs)
 
-        # Fit main model on all samples as one batch, log only on terminal state
+        # --> Fit main model on all samples as one batch, log only on terminal state
         # TODO: Fix tensorboard
         # self.main_model.fit(np.array(x)/255, np.array(y),
         #                     batch_size=self.settings.rl_behavior_settings.minibatch_size,

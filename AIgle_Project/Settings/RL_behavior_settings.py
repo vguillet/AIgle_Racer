@@ -32,7 +32,7 @@ class RL_behavior_settings:
 
         self.show_best_agent_visualiser = False
 
-        # ___________________________ DQL main parameters __________________
+        # ___________________________ Image_DQL main parameters __________________
         # ---- Stats settings
         self.stats_sampling_rate = 100
 
@@ -47,16 +47,14 @@ class RL_behavior_settings:
         self.cyclic_training = False
 
         # ---- Learning settings
-        self.nb_bucket = 5
+        self.learning_rate = 0.3        # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
+        self.discount = 0.75            #                   short-term reward 0 <-- x --> 1 long-term reward
 
-        self.learning_rate = 0.5        # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
-        self.discount = 0.65            #                   short-term reward 0 <-- x --> 1 long-term reward
-
-        self.minibatch_size = 64
+        self.minibatch_size = 20
         self.update_target_every = 5
 
         # ---- Exploration settings
-        self.epsilon = 30               # Probability (percent) of taking random action
+        self.epsilon = 25               # Probability (percent) of taking random action
         self.random_starting_pos = False
 
         # ---- Decay settings
@@ -65,5 +63,24 @@ class RL_behavior_settings:
         self.learning_rate_decay = 1
         self.discount_decay = 1
         self.epsilon_decay = 1
+
+        return
+
+    def gen_ddql_settings(self):
+        # ___________________________ Print/plot parameters ______________________
+
+        # ___________________________ Image_DQL main parameters __________________
+        # ---- Agent properties
+        self.memory_size = 5_000
+        self.min_replay_memory_size = 250
+
+        # ---- Run settings
+        self.episodes = 2_000
+
+        self.critic_learning_rate = 0.0001
+        self.tau = 0.001                    # Rate at which target weights change
+
+
+
 
         return

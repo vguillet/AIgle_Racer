@@ -5,8 +5,11 @@
 """
 
 # Built-in/Generic Imports
+import math
 
 # Libs
+from keras.models import Sequential
+
 
 # Own modules
 
@@ -18,7 +21,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class Reward_function:
+class Reward_function(object):
     def __init__(self):
         return
 
@@ -29,25 +32,13 @@ class Reward_function:
 
         else:
             # --> Set default reward to 0
-            reward = 1000
+            reward = 1
 
             # --> Check x position
-            if -2.65 <= state[0][0] <= 3.27:
+            if -2.65 <= state[0][0] <= 3.27 and -28 <= state[0][1] <= -29 and -4.93 <= state[0][2] <= 0.7596:
                 pass
             else:
-                reward = -1
-
-            # --> Check y position
-            if -28 <= state[0][0] <= -29:
-                pass
-            else:
-                reward = -1
-
-            # --> Check z position
-            if -4.93 <= state[0][2] <= 0.7596:
-                pass
-            else:
-                reward = -1
+                reward = -(math.sqrt((0 - state[0][0])**2 + (-28.5 - state[0][1])**2 + (-2 - state[0][2])**2)/math.sqrt((0)**2 + (-28.5)**2 + (-2)**2))
 
         return reward
 
@@ -61,9 +52,6 @@ class Reward_function:
             return True
 
         else:
-            # --> Set default reward to 0
-            reward = 0
-
             # --> Check x position
             if -2.65 <= state[0][0] <= 3.27:
                 pass
@@ -71,7 +59,7 @@ class Reward_function:
                 return False
 
             # --> Check y position
-            if -28 <= state[0][0] <= -29:
+            if -28 <= state[0][1] <= -29:
                 pass
             else:
                 return False

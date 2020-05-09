@@ -46,3 +46,5 @@ class DQL_models:
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.summary()
         return model
+
+
