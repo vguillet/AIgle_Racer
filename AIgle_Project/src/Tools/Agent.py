@@ -55,15 +55,6 @@ class Agent(object):
                                         new_state[1]
                                         ).join()
 
-        # time.sleep(1.5)
-
-        # result = self.client.moveOnPathAsync([airsim.Vector3r(new_state[0][0],
-        #                                                       new_state[0][1],
-        #                                                       new_state[0][2])],
-        #                                      new_state[1], 150,
-        #                                      airsim.DrivetrainType.ForwardOnly,
-        #                                      airsim.YawMode(False, 0), 20, 1).join()
-
         return
 
     def reset(self, random_starting_pos=False):

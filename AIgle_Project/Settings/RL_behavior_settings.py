@@ -77,9 +77,13 @@ class RL_behavior_settings:
         # ---- Run settings
         self.episodes = 2_000
 
+        self.actor_learning_rate = 0.001
         self.critic_learning_rate = 0.0001
+
+        self.minibatch_size = 64
         self.tau = 0.001                    # Rate at which target weights change
 
+        self.discount = 0.98            #                   short-term reward 0.9 <-- x --> 0.99 long-term reward
 
 
 

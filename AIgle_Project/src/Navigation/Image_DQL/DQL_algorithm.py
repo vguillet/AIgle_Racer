@@ -104,6 +104,7 @@ class DQL_image_based_navigation:
                     # Get random action
                     action = np.random.randint(0, len(agent.action_lst))
 
+                # --> Perform step using action
                 new_state, reward, done = agent.step(action)
 
                 # --> Count reward

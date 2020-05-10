@@ -26,7 +26,7 @@ __date__ = '26/04/2020'
 
 class flight_navigation():
     def __init__(self, client):
-        # --> Navigation_airsim_vanilla to client
+        # --> Navigation to client
         self.client = client
 
     def run(self):

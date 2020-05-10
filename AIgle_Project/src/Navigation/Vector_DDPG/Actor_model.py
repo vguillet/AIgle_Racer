@@ -30,14 +30,13 @@ __date__ = '26/04/2020'
 
 
 class Actor_model(object):
-    def __init__(self, sess, name, learning_rate, tau, mu,
-                 input_dims, nb_actions, action_bound, checkpoint_directory="tmp/ddpg/actor"):
+    def __init__(self, name, learning_rate,
+                 input_dims, nb_actions, action_bound,
+                 checkpoint_directory="tmp/ddpg/actor", model_ref=None):
+
         # ---- Initiate model parameters
-        self.sess = sess
         self.name = name
         self.learning_rate = learning_rate
-
-        self.tau = tau
 
         self.input_dims = input_dims
         self.action_dims = nb_actions
@@ -47,27 +46,37 @@ class Actor_model(object):
         self.params = tf.keras.Input(shape=(), dtype=tf.dtypes.float32)
 
         # --> Set checkpoint file directory
-        self.checkpoint_file = os.path.join(checkpoint_directory, name + "_ddpg")
+        self.checkpoint_file = os.path.join(checkpoint_directory, self.name + "_ddpg")
 
-        # --> Create main model
-        self.main_network = self.create_network()
+        if model_ref is None:
+            # --> Create main model
+            self.main_network = self.create_network()
 
-        # --> Create target network
-        self.target_network = self.create_network()
+            # --> Create target network
+            self.target_network = self.create_network()
 
-        # --> Set target network weights equal to main model weights
-        self.target_network.set_weights(self.main_network.get_weights())
+            # --> Set target network weights equal to main model weights
+            self.target_network.set_weights(self.main_network.get_weights())
+        else:
+            # --> Load main model
+            self.main_network = self.load_checkpoint(model_ref)
 
-    def train_target(self):
+            # --> Load target network
+            self.target_network = self.load_checkpoint(model_ref)
+
+    def train_target(self, tau):
+        # --> Soft update using tau
         main_weights = self.main_network.get_weights()
         target_weights = self.target_network.get_weights()
 
         for i in range(len(main_weights)):
-            target_weights[i] = self.tau * main_weights[i] + (1 - self.tau) * target_weights[i]
+            target_weights[i] = tau * main_weights[i] + (1 - tau) * target_weights[i]
         self.target_network.set_weights(target_weights)
         return
 
     def create_network(self):
+        # TODO: Review model
+
         state = Input(shape=self.input_dims, dtype='float32')
         x = Dense(400, activation='relu',
                   kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
@@ -81,3 +90,13 @@ class Actor_model(object):
                     kernel_initializer=RU(-0.003, 0.003))(x)
 
         return Model(inputs=state, outputs=out)
+
+    def save_checkpoint(self):
+        print(".. saving checkpoint ...")
+        # TODO: Add save network
+        return
+
+    def load_checkpoint(self, model_ref):
+        print(".. loading checkpoint ...")
+        # TODO: Add load network
+        return
