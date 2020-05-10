@@ -10,12 +10,14 @@
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import os
 
 # Own modules
 from AIgle_Project.Settings.SETTINGS import SETTINGS
 from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
 from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 
+from AIgle_Project.src.Navigation.Agents.Image_DQL_agent import DQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import DDPG_agent
 
 __version__ = '1.1.1'
@@ -25,24 +27,33 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class DDPG_vector_based_navigation:
-    def __init__(self, client, memory_ref, actor_ref, critic_ref):
+class RL_navigation:
+    def __init__(self, client):
+        # --> Set graphics card for Deep Learning
+        os.environ['CUDA_VISIBLE_DEVICES'] = "0"
+
         # --> Initialise settings
         settings = SETTINGS()
         settings.rl_behavior_settings.gen_dql_settings()
+        settings.rl_behavior_settings.gen_ddql_settings()
 
         # --> Initialise tools
         ml_tools = ML_tools()
         rl_tools = RL_tools()
 
-        # ----- Create agent
-        agent = DDPG_agent(client, "1",
-                           memory_type="simple",
-                           memory_ref=memory_ref,
-                           actor_ref=actor_ref,
-                           critic_ref=critic_ref)
+        # ---- Create agent
+        agent = DQL_agent(client, "1",
+                          memory_type=settings.rl_behavior_settings.memory_type,
+                          memory_ref=settings.rl_behavior_settings.memory_ref,
+                          model_ref=settings.rl_behavior_settings.model_ref)
 
-        # ----- Create trackers
+        agent = DDPG_agent(client, "1",
+                           memory_type=settings.rl_behavior_settings.memory_type,
+                           memory_ref=settings.rl_behavior_settings.memory_ref,
+                           actor_ref=settings.rl_behavior_settings.actor_ref,
+                           critic_ref=settings.rl_behavior_settings.critic_ref)
+
+        # ---- Create trackers
         # --> Episode rewards
         ep_rewards = []
 
@@ -51,7 +62,7 @@ class DDPG_vector_based_navigation:
             # TODO: Fix tensorboard
             # agent.tensorboard.step = episode
 
-            # ----- Reset
+            # ---- Reset
             # --> Reset episode reward and step number
             episode_reward = 0
 
@@ -64,7 +75,7 @@ class DDPG_vector_based_navigation:
             # --> Reset flag and start iterating until episode ends
             done = False
 
-            # ----- Compute new episode parameters
+            # ---- Compute new episode parameters
             # TODO: Connect episode parameters
             learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
 
@@ -92,7 +103,7 @@ class DDPG_vector_based_navigation:
 
                 # --> Update update replay memory and train models
                 client.simPause(True)
-                agent.train(done)
+                agent.train()
                 client.simPause(False)
 
                 # --> Set current state as new state

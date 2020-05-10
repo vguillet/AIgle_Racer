@@ -105,9 +105,12 @@ class DDPG():
 
         q_t_pls_1 = self.critic_target([next_states_batch, next_actions])
         y_i = rewards_batch
+
         for i in range(self.batch_size):
             if not done_batch[i]:
                 y_i[i] += q_t_pls_1[i] * self.gamma
+
+
         if isinstance(self.buffer, Prioritized_experience_replay):
             td_error = np.abs(y_i - self.critic.predict([states_batch, actions_batch]))
             self.buffer.update_priorities(indices,td_error)

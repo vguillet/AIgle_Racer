@@ -24,7 +24,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class flight_navigation():
+class predefined_navigation():
     def __init__(self, client):
         # --> Navigation to client
         self.client = client

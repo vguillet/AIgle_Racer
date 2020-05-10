@@ -32,11 +32,19 @@ class RL_behavior_settings:
 
         self.show_best_agent_visualiser = False
 
-        # ___________________________ Image_DQL main parameters __________________
+        # ___________________________ Main parameters ____________________________
+        # ---- Agent ref
+        self.model = None
+
+        self.memory_ref = None
+
         # ---- Stats settings
         self.stats_sampling_rate = 100
 
         # ---- Agent properties
+        # ["simple, "prioritized"]
+        self.memory_type = "simple"
+
         self.memory_size = 5_000
         self.min_replay_memory_size = 250
 
@@ -69,8 +77,16 @@ class RL_behavior_settings:
     def gen_ddql_settings(self):
         # ___________________________ Print/plot parameters ______________________
 
-        # ___________________________ Image_DQL main parameters __________________
+        # ___________________________ Main parameters ____________________________
+        # ---- Agent ref
+        self.actor_ref = None
+        self.critic_ref = None
+
+        self.memory_ref = None
+
         # ---- Agent properties
+        # ["simple, "prioritized"]
+        self.memory_type = "simple"
         self.memory_size = 5_000
         self.min_replay_memory_size = 250
 
