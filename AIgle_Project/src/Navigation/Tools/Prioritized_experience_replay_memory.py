@@ -5,10 +5,9 @@
 """
 
 # Built-in/Generic Imports
-import sys
 import random
-import time
 from collections import deque
+import pickle
 
 # Libs
 import numpy as np
@@ -23,11 +22,21 @@ __date__ = '26/04/2020'
 
 
 class Prioritized_experience_replay_memory(object):
-    def __init__(self, max_size):
-        self.memory_size = max_size
-        self.memory = deque(maxlen=max_size)
-        self.priorities = deque(maxlen=max_size)
-        self.indexes = deque(maxlen=max_size)
+    def __init__(self, max_size, memory_ref=None):
+
+        if memory_ref is not None:
+            self.memory, self.priorities, self.indexes = self.load_replay_memory(memory_ref)
+            self.memory_size = len(self.memory)
+
+        else:
+            self.memory_size = max_size
+            self.memory = deque(maxlen=max_size)
+            self.priorities = deque(maxlen=max_size)
+            self.indexes = deque(maxlen=max_size)
+
+    @property
+    def length(self):
+        return len(self.memory)
 
     def remember(self, state, action, reward, next_state, done):
         # --> Save experience to memory
@@ -45,13 +54,20 @@ class Prioritized_experience_replay_memory(object):
         return
 
     def sample_memory(self, batch_size):
+        # --> Sample memory according to priorities
         indices = random.choices(self.indexes, weights=self.priorities, k=batch_size)
+        minibatch = [self.memory[indx - 1] for indx in indices]
 
-        replay_memory = [self.memory[indx - 1] for indx in indices]
-        arr = np.array(replay_memory)
-        states_batch = np.vstack(arr[:, 0])
-        actions_batch = arr[:, 1].astype('float32').reshape(-1, 1)
-        rewards_batch = arr[:, 2].astype('float32').reshape(-1, 1)
-        next_states_batch = np.vstack(arr[:, 3])
-        done_batch = np.vstack(arr[:, 4]).astype(bool)
-        return states_batch, actions_batch, rewards_batch, next_states_batch, done_batch, indices
+        return minibatch, indices
+
+    def save_replay_memory(self, ref):
+        # --> Record replay memory
+        with open('Data/ddpg/PR_replay_memory/RM_' + ref, 'wb') as file:
+            pickle.dump({'memory': self.memory}, file)
+            pickle.dump({'priorities': self.priorities}, file)
+            pickle.dump({'indexes': self.indexes}, file)
+        return
+
+    def load_replay_memory(self, memory_ref):
+        # TODO: Add load pickle
+        return

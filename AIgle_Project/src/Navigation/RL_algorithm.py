@@ -5,13 +5,8 @@
 """
 
 # Built-in/Generic Imports
-import os
-import sys
-import time
 
 # Libs
-import airsim
-import cv2
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -20,8 +15,8 @@ import matplotlib.pyplot as plt
 from AIgle_Project.Settings.SETTINGS import SETTINGS
 from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
 from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
-from AIgle_Project.src.Navigation.Image_DQL.DQL_agent import DQL_agent
-from AIgle_Project.src.Navigation.Models.DQL_models import DQL_models
+
+from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import DDPG_agent
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -29,68 +24,46 @@ __date__ = '26/04/2020'
 
 ##################################################################################################################
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-
-class DQL_image_based_navigation:
-    def __init__(self, client):
+class DDPG_vector_based_navigation:
+    def __init__(self, client, memory_ref, actor_ref, critic_ref):
         # --> Initialise settings
         settings = SETTINGS()
         settings.rl_behavior_settings.gen_dql_settings()
-        
+
         # --> Initialise tools
         ml_tools = ML_tools()
         rl_tools = RL_tools()
-        
+
         # ----- Create agent
-        agent = DQL_agent(client, "")
-
-        # ----- Create models
-        model_io_shape = (agent.observation.shape, len(agent.action_lst))
-
-        print(model_io_shape)
-
-        # --> Create main model
-        main_model = DQL_models().model_1(model_io_shape[0],
-                                          model_io_shape[1])
-
-        # --> Create target network
-        target_model = DQL_models().model_1(model_io_shape[0],
-                                            model_io_shape[1])
-        # --> Set target network weights equal to main model weights
-        target_model.set_weights(main_model.get_weights())
-
-        # --> Assign models to agent
-        agent.assigned_main_model = main_model
-        agent.assigned_target_model = target_model
+        agent = DDPG_agent(client, "1",
+                           memory_type="simple",
+                           memory_ref=memory_ref,
+                           actor_ref=actor_ref,
+                           critic_ref=critic_ref)
 
         # ----- Create trackers
-        # --> Used to count when to update target network with main network's weights
-        target_update_counter = 0
-        
         # --> Episode rewards
         ep_rewards = []
 
         # --> Iterate over episodes
         for episode in tqdm(range(1, settings.rl_behavior_settings.episodes + 1), ascii=True, unit='episodes'):
-            # --> Update tensorboard step every episode
             # TODO: Fix tensorboard
             # agent.tensorboard.step = episode
-    
+
             # ----- Reset
             # --> Reset episode reward and step number
             episode_reward = 0
-            step = 1
-    
+
             # --> Reset agent/environment
             agent.reset()
-            
+
             # --> Get initial state
             current_state = agent.observation
-            
+
             # --> Reset flag and start iterating until episode ends
             done = False
-            
+
             # ----- Compute new episode parameters
             # TODO: Connect episode parameters
             learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
@@ -99,7 +72,7 @@ class DQL_image_based_navigation:
                 # --> Get a random value
                 if np.random.random() > settings.rl_behavior_settings.epsilon:
                     # --> Get best action from main model
-                    action = np.argmax(agent.get_qs())
+                    action = agent.get_qs()
                 else:
                     # Get random action
                     action = np.random.randint(0, len(agent.action_lst))
@@ -109,27 +82,37 @@ class DQL_image_based_navigation:
 
                 # --> Count reward
                 episode_reward += reward
-                
+
                 # TODO: Setup render environment
                 # if SHOW_PREVIEW and not episode % AGGREGATE_STATS_EVERY:
                 #     env.render()
-    
-                # Every step we update replay memory and train main network
+
+                # --> Add memory to replay memory
                 agent.remember(current_state, action, reward, new_state, done)
 
+                # --> Update update replay memory and train models
                 client.simPause(True)
-                target_update_counter = agent.train(done, target_update_counter)
+                agent.train(done)
                 client.simPause(False)
 
+                # --> Set current state as new state
                 current_state = new_state
-                step += 1
 
             ep_rewards.append(episode_reward)
 
+            # TODO: add checkpoint rate in settings
             if episode % 10 == 0:
                 plt.plot(ep_rewards)
                 plt.grid()
                 plt.show()
+
+            if episode % 100 == 0:
+                # --> Record networks
+                agent.actor_model.save_checkpoint(str(episode))
+                agent.critic_model.save_checkpoint(str(episode))
+
+                # --> Record replay memory
+                agent.memory.save_replay_memory(str(episode))
 
             # print("\n", episode_reward)
             # Append episode reward to a list and log stats (every given number of episodes)
@@ -140,7 +123,7 @@ class DQL_image_based_navigation:
             #     max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
             #     agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward,
             #                                    epsilon=epsilon)
-            # 
+            #
             #     # Save model, but only when min reward is greater or equal a set value
             #     if min_reward >= MIN_REWARD:
             #         agent.model.save(

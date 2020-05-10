@@ -24,10 +24,13 @@ class RL_agent_abc(ABC):
     def observation(self):
         return
 
-
     @property
     @abstractmethod
     def action_lst(self):
+        return
+
+    @abstractmethod
+    def get_qs(self):
         return
 
     @abstractmethod
@@ -35,9 +38,9 @@ class RL_agent_abc(ABC):
         return
 
     @abstractmethod
-    def __str__(self):
+    def remember(self, current_state, action, reward, next_state, done):
         return
 
     @abstractmethod
-    def __repr__(self):
-        self.__repr__()
+    def train(self):
+        return

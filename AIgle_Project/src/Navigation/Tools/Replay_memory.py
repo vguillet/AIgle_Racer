@@ -5,10 +5,9 @@
 """
 
 # Built-in/Generic Imports
-import sys
 import random
-import time
 from collections import deque
+import pickle
 
 # Libs
 import numpy as np
@@ -23,9 +22,19 @@ __date__ = '26/04/2020'
 
 
 class Replay_memory(object):
-    def __init__(self, max_size):
-        self.memory_size = max_size
-        self.memory = deque(maxlen=max_size)
+    def __init__(self, max_size, memory_ref=None):
+
+        if memory_ref is not None:
+            self.memory = self.load_replay_memory(memory_ref)
+            self.memory_size = len(self.memory)
+
+        else:
+            self.memory_size = max_size
+            self.memory = deque(maxlen=max_size)
+
+    @property
+    def length(self):
+        return len(self.memory)
 
     def remember(self, state, action, reward, next_state, done):
         # --> Save experience to memory
@@ -33,12 +42,15 @@ class Replay_memory(object):
         return
 
     def sample_memory(self, batch_size):
-        replay_memory = np.array(random.sample(self.memory, batch_size))
-        arr = np.array(replay_memory)
-        states_batch = np.vstack(arr[:, 0])
-        actions_batch = arr[:, 1].astype('float32').reshape(-1, 1)
-        rewards_batch = arr[:, 2].astype('float32').reshape(-1, 1)
-        next_states_batch = np.vstack(arr[:, 3])
-        dones_batch = np.vstack(arr[:, 4]).astype(bool)
+        minibatch = np.array(random.sample(self.memory, batch_size))
+        return minibatch, None
 
-        return states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch
+    def save_replay_memory(self, ref):
+        # --> Record replay memory
+        with open('Data/ddpg/simple_replay_memory/RM_' + str(ref), 'wb') as file:
+            pickle.dump({'memory': self.memory}, file)
+        return
+
+    def load_replay_memory(self, memory_ref):
+        # TODO: Add load pickle
+        return

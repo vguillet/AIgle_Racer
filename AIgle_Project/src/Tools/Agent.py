@@ -48,7 +48,7 @@ class Agent(object):
         return self.client.simGetCollisionInfo().has_collided
 
     def move(self, new_state):
-        # # --> Move drone to specified position
+        # --> Move drone to specified position
         self.client.moveToPositionAsync(new_state[0][0],
                                         new_state[0][1],
                                         new_state[0][2],

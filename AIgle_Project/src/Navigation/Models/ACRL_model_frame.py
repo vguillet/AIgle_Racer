@@ -1,21 +1,14 @@
 
 ##################################################################################################################
 """
-https://www.youtube.com/watch?v=6Yd5WnYls_Y
+
 """
 
 # Built-in/Generic Imports
 import os
+import sys
 
 # Libs
-import numpy as np
-
-from keras.initializers import RandomUniform as RU
-from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Concatenate
-from keras.optimizers import Adam
-
-import keras.backend as K
 import tensorflow as tf
 
 # Own modules
@@ -27,23 +20,25 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class Critic_model:
-    def __init__(self, name, learning_rate,
+class ACRL_model(object):
+    def __init__(self, name,
                  input_dims, nb_actions,
-                 checkpoint_directory="tmp/ddpg/critic", model_ref=None):
+                 checkpoint_directory, model_ref=None):
+
         # ---- Initiate model parameters
         self.name = name
-        self.learning_rate = learning_rate
-
         self.input_dims = input_dims
         self.action_dims = nb_actions
 
+        self.params = tf.keras.Input(shape=(), dtype=tf.dtypes.float32)
+
         # --> Set checkpoint file directory
-        self.checkpoint_file = os.path.join(checkpoint_directory, name+"_ddpg")
+        self.checkpoint_path = os.path.join(checkpoint_directory, self.name + "_ddpg")
 
         if model_ref is None:
             # --> Create main model
             self.main_network = self.create_network()
+            self.main_network.summary()
 
             # --> Create target network
             self.target_network = self.create_network()
@@ -57,7 +52,7 @@ class Critic_model:
             # --> Load target network
             self.target_network = self.load_checkpoint(model_ref)
 
-    def train_target(self, tau):
+    def soft_update_target(self, tau):
         # --> Soft update using tau
         main_weights = self.main_network.get_weights()
         target_weights = self.target_network.get_weights()
@@ -67,31 +62,19 @@ class Critic_model:
         self.target_network.set_weights(target_weights)
         return
 
+    def hard_update_target(self):
+        # --> Hard update
+        main_weights = self.main_network.get_weights()
+        self.target_network.set_weights(main_weights)
+        return
+
     def create_network(self):
-        # TODO: Review model
-        state = Input(shape=self.input_dims, name='state_input', dtype='float32')
-        state_i = Dense(400,
-                        activation='relu',
-                        kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
-                                              1 / np.sqrt(self.input_dims),
-                                              1 / np.sqrt(self.input_dims)))(state)
+        print("!!!!! No network specified !!!!!")
+        sys.exit()
 
-        action = Input(shape=(self.action_dims,), name='action_input')
-
-        x = Concatenate([state_i, action])
-
-        x = Dense(300,
-                  activation='relu',
-                  kernel_initializer=RU(-1 / np.sqrt(401),
-                                        1 / np.sqrt(401)))(x)
-
-        out = Dense(4, activation='linear')(x)
-
-        return Model(inputs=[state, action], outputs=out)
-
-    def save_checkpoint(self):
+    def save_checkpoint(self, ref):
         print(".. saving checkpoint ...")
-        # TODO: Add save network
+        self.main_network.save(os.path.join(self.checkpoint_path, ref + ".h5"))
         return
 
     def load_checkpoint(self, model_ref):

@@ -15,9 +15,15 @@ from collections import deque
 from itertools import combinations, permutations, product
 
 # Own modules
-from AIgle_Project.src.Tools.Agent import Agent
-from AIgle_Project.src.Vision.Camera import Camera
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
+from AIgle_Project.src.Tools.Agent import Agent
+
+from AIgle_Project.src.Vision.Camera import Camera
+from AIgle_Project.src.Navigation.Models.Simple_image_models import Simple_image_model
+
+from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
+from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
+
 from AIgle_Project.src.Navigation.Tools.Tensor_board_gen import ModifiedTensorBoard
 from AIgle_Project.src.Navigation.Tools.Reward_function_gen import Reward_function
 
@@ -29,7 +35,9 @@ __date__ = '26/04/2020'
 
 
 class DQL_agent(RL_agent_abc, Agent):
-    def __init__(self, client, name):
+    def __init__(self, client, name, memory_type="simple",
+                 memory_ref=None,
+                 model_ref=None):
         super().__init__(client, name)
 
         # --> Setup rl settings
@@ -42,44 +50,44 @@ class DQL_agent(RL_agent_abc, Agent):
         # --> Setup camera
         self.camera = Camera(client, "0", 0)
 
+        # ---- Setup agent properties
         # --> Setup model
-        self.assigned_main_model = None
-        self.assigned_target_model = None
+        self.model = Simple_image_model("Simple_model",
+                                        self.observation.shape,
+                                        len(self.action_lst),
+                                        model_ref=model_ref)
 
-        # --> Setup reward dict
+        # --> Setup memory
+        if memory_type == "simple":
+            self.memory = Replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+
+        elif memory_type == "prioritized":
+            self.memory = Prioritized_experience_replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+
+        else:
+            print("!!!!! Invalid memory setting !!!!!")
+            sys.exit()
+
+        # --> Setup rewards
         self.reward_function = Reward_function()
 
-        # --> Setup trackers
-        self.memory = deque(maxlen=self.settings.rl_behavior_settings.memory_size)
+        # ---- Setup trackers
+        # --> Used to count when to update target network with main network's weights
+        self.target_update_counter = 0
 
-        # Step trackers
-        # self.pos_history = []
+        # --> Step trackers
+        self.observation_history = [self.observation]
+        self.action_history = []
+        self.reward_history = []
 
-        # self.reward_history = []
-        # self.action_history = []
-        # self.action_success_history = []
+        # --> Episode trackers
+        self.observation_timeline = []
+        self.action_timeline = []
+        self.reward_timeline = []
 
-        # Episode trackers
-        # self.reward_timeline = []
         # self.aggr_ep_reward_timeline = {'ep': [], 'avg': [], 'max': [], 'min': []}
 
         return
-
-    @property
-    def main_model(self):
-        if self.assigned_main_model is None:
-            print("!!!!! No model assigned to agent !!!!!")
-            sys.exit()
-        else:
-            return self.assigned_main_model
-
-    @property
-    def target_model(self):
-        if self.assigned_target_model is None:
-            print("!!!!! No model assigned to agent !!!!!")
-            sys.exit()
-        else:
-            return self.assigned_target_model
 
     @property
     def observation(self):
@@ -137,7 +145,7 @@ class DQL_agent(RL_agent_abc, Agent):
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
-        return self.main_model.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
+        return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
 
     def step(self, action):
         # --> Determine action requested
@@ -171,16 +179,21 @@ class DQL_agent(RL_agent_abc, Agent):
         if not done:
             self.age += 1
 
+        # --> Record step results
+        self.observation_history.append(self.observation)
+        self.action_history.append(action)
+        self.reward_history.append(reward)
+
         return self.observation, reward, done
 
     def remember(self, current_state, action, reward, next_state, done):
-        self.memory.append((current_state, action, reward, next_state, done))
+        self.memory.remember(current_state, action, reward, next_state, done)
         return
 
-    def train(self, terminal_state, target_update_counter):
+    def train(self):
         # --> Check whether memory contains enough experience
-        if len(self.memory) < self.settings.rl_behavior_settings.min_replay_memory_size:
-            return target_update_counter
+        if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
+            return
 
         # --> Randomly sample minibatch from the memory
         minibatch = random.sample(self.memory, self.settings.rl_behavior_settings.minibatch_size)
@@ -189,13 +202,13 @@ class DQL_agent(RL_agent_abc, Agent):
         current_states = np.array([transition[0] for transition in minibatch])/255
         
         # --> Query main model for Q values
-        current_qs_list = self.main_model.predict(current_states)
+        current_qs_list = self.model.main_network.predict(current_states)
         
         # --> Get next states from minibatch
         next_states = np.array([transition[3] for transition in minibatch])/255
         
         # --> Query target model for Q values
-        future_qs_list = self.target_model.predict(next_states)
+        future_qs_list = self.model.target_network.predict(next_states)
         
         # --> Creating feature set and target list
         x = []      # Images
@@ -226,26 +239,46 @@ class DQL_agent(RL_agent_abc, Agent):
         #                     verbose=0,
         #                     shuffle=False,
         #                     callbacks=[self.tensorboard] if terminal_state else None)
-        self.main_model.fit(np.array(x)/255, np.array(y),
-                            batch_size=self.settings.rl_behavior_settings.minibatch_size,
-                            verbose=0,
-                            shuffle=False)
 
-        # --> Update target network counter every episode
-        if terminal_state:
-            target_update_counter += 1
+        self.model.main_network.fit(np.array(x)/255, np.array(y),
+                                    batch_size=self.settings.rl_behavior_settings.minibatch_size,
+                                    verbose=0,
+                                    shuffle=False)
 
-        if target_update_counter > self.settings.rl_behavior_settings.update_target_every:
+        if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
             # --> Update target network with weights of main network
-            self.target_model.set_weights(self.main_model.get_weights())
+            self.model.target_network.set_weights(self.model.main_network.get_weights())
 
             # --> Reset target_update_counter
-            target_update_counter = 0
+            self.target_update_counter = 0
 
-        return target_update_counter
+        return
 
-    def __str__(self):
-        return self.name + " (Bot)"
+    def reset(self, random_starting_pos=False):
+        # TODO: Implement random offset starting point
+        # --> Reset Drone to starting position
+        self.client.reset()
 
-    def __repr__(self):
-        self.__repr__()
+        # --> Restart simulation
+        self.client.simPause(False)
+
+        # --> Enable API control and take off
+        self.client.enableApiControl(True)
+        self.client.armDisarm(True)
+        self.client.moveToPositionAsync(0, 0, -2, 3).join()
+
+        # --> Reset agent properties
+        self.age = 0
+
+        # --> Record episode trackers to timeline trackers
+        self.observation_timeline += self.observation_history
+        self.action_timeline += self.action_history
+        self.reward_timeline += self.reward_history
+
+        # --> Reset step trackers
+        self.observation_history = [self.observation]
+        self.action_history = []
+        self.reward_history = []
+
+        # --> Update target network counter
+        self.target_update_counter += 1
