@@ -34,7 +34,7 @@ class RL_behavior_settings:
 
         # ___________________________ Main parameters ____________________________
         # ---- Agent ref
-        self.model = None
+        self.model_ref = None
 
         self.memory_ref = None
 
@@ -43,7 +43,7 @@ class RL_behavior_settings:
 
         # ---- Agent properties
         # ["simple, "prioritized"]
-        self.memory_type = "simple"
+        self.memory_type = "prioritized"
 
         self.memory_size = 5_000
         self.min_replay_memory_size = 250
@@ -74,7 +74,7 @@ class RL_behavior_settings:
 
         return
 
-    def gen_ddql_settings(self):
+    def gen_ddpg_settings(self):
         # ___________________________ Print/plot parameters ______________________
 
         # ___________________________ Main parameters ____________________________

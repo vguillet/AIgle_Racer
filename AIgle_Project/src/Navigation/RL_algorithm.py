@@ -14,6 +14,7 @@ import os
 
 # Own modules
 from AIgle_Project.Settings.SETTINGS import SETTINGS
+from AIgle_Project.src.Tools.Progress_bar_tool import Progress_bar
 from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
 from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 
@@ -34,8 +35,9 @@ class RL_navigation:
 
         # --> Initialise settings
         settings = SETTINGS()
+        settings.agent_settings.gen_agent_settings()
         settings.rl_behavior_settings.gen_dql_settings()
-        settings.rl_behavior_settings.gen_ddql_settings()
+        # settings.rl_behavior_settings.gen_ddpg_settings()
 
         # --> Initialise tools
         ml_tools = ML_tools()
@@ -47,18 +49,25 @@ class RL_navigation:
                           memory_ref=settings.rl_behavior_settings.memory_ref,
                           model_ref=settings.rl_behavior_settings.model_ref)
 
-        agent = DDPG_agent(client, "1",
-                           memory_type=settings.rl_behavior_settings.memory_type,
-                           memory_ref=settings.rl_behavior_settings.memory_ref,
-                           actor_ref=settings.rl_behavior_settings.actor_ref,
-                           critic_ref=settings.rl_behavior_settings.critic_ref)
+        # agent = DDPG_agent(client, "1",
+        #                    memory_type=settings.rl_behavior_settings.memory_type,
+        #                    memory_ref=settings.rl_behavior_settings.memory_ref,
+        #                    actor_ref=settings.rl_behavior_settings.actor_ref,
+        #                    critic_ref=settings.rl_behavior_settings.critic_ref)
 
         # ---- Create trackers
         # --> Episode rewards
         ep_rewards = []
 
+        episode_bar = Progress_bar(max_step=settings.rl_behavior_settings.episodes,
+                                   overwrite_setting=False,
+                                   label="Episodes")
+
         # --> Iterate over episodes
-        for episode in tqdm(range(1, settings.rl_behavior_settings.episodes + 1), ascii=True, unit='episodes'):
+        for episode in range(1, settings.rl_behavior_settings.episodes + 1):
+            print("\n=================== Episode", episode)
+            episode_bar.update_progress()
+
             # TODO: Fix tensorboard
             # agent.tensorboard.step = episode
 
@@ -79,6 +88,7 @@ class RL_navigation:
             # TODO: Connect episode parameters
             learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
 
+            step_bar = Progress_bar(max_step=settings.agent_settings.max_step, label="Steps")
             while not done:
                 # --> Get a random value
                 if np.random.random() > settings.rl_behavior_settings.epsilon:
@@ -108,8 +118,13 @@ class RL_navigation:
 
                 # --> Set current state as new state
                 current_state = new_state
+                
+                if not done:
+                    step_bar.update_progress()
 
             ep_rewards.append(episode_reward)
+
+            print("\n--> Episode complete")
 
             # TODO: add checkpoint rate in settings
             if episode % 10 == 0:
@@ -117,13 +132,13 @@ class RL_navigation:
                 plt.grid()
                 plt.show()
 
-            if episode % 100 == 0:
-                # --> Record networks
-                agent.actor_model.save_checkpoint(str(episode))
-                agent.critic_model.save_checkpoint(str(episode))
+            # if episode % 100 == 0:
+            # --> Record networks
+            # agent.actor_model.save_checkpoint(str(episode))
+            # agent.critic_model.save_checkpoint(str(episode))
 
-                # --> Record replay memory
-                agent.memory.save_replay_memory(str(episode))
+            # --> Record replay memory
+            # agent.memory.save_replay_memory(str(episode))
 
             # print("\n", episode_reward)
             # Append episode reward to a list and log stats (every given number of episodes)

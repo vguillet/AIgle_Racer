@@ -25,8 +25,8 @@ class Replay_memory(object):
     def __init__(self, max_size, memory_ref=None):
 
         if memory_ref is not None:
-            self.memory = self.load_replay_memory(memory_ref)
-            self.memory_size = len(self.memory)
+            self.memory = self.load(memory_ref)
+            self.memory_size = self.length
 
         else:
             self.memory_size = max_size
@@ -41,16 +41,16 @@ class Replay_memory(object):
         self.memory.append([state, action, reward, next_state, done])
         return
 
-    def sample_memory(self, batch_size):
+    def sample(self, batch_size):
         minibatch = np.array(random.sample(self.memory, batch_size))
         return minibatch, None
 
-    def save_replay_memory(self, ref):
+    def save(self, ref):
         # --> Record replay memory
         with open('Data/ddpg/simple_replay_memory/RM_' + str(ref), 'wb') as file:
             pickle.dump({'memory': self.memory}, file)
         return
 
-    def load_replay_memory(self, memory_ref):
+    def load(self, memory_ref):
         # TODO: Add load pickle
         return

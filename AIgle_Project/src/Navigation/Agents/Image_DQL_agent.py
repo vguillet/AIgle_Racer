@@ -50,6 +50,10 @@ class DQL_agent(RL_agent_abc, Agent):
         # --> Setup camera
         self.camera = Camera(client, "0", 0)
 
+        # --> Setup rewards
+        self.reward_function = Reward_function()
+        self.goal_tracker = 0
+
         # ---- Setup agent properties
         # --> Setup model
         self.model = Simple_image_model("Simple_model",
@@ -67,9 +71,6 @@ class DQL_agent(RL_agent_abc, Agent):
         else:
             print("!!!!! Invalid memory setting !!!!!")
             sys.exit()
-
-        # --> Setup rewards
-        self.reward_function = Reward_function()
 
         # ---- Setup trackers
         # --> Used to count when to update target network with main network's weights
@@ -94,13 +95,13 @@ class DQL_agent(RL_agent_abc, Agent):
 
         response = self.camera.fetch_single_img()
 
-        # get numpy array
+        # --> Get numpy array
         img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)
 
-        # reshape array to 4 channel image array H X W X 4
+        # --> Reshape array to 4 channel image array H X W X 4
         img_rgb = img1d.reshape(response.height, response.width, 3)
 
-        # original image is flipped vertically
+        # --> Flip (original image is flipped vertically)
         img_rgb = np.flipud(img_rgb)
 
         return img_rgb
@@ -171,10 +172,10 @@ class DQL_agent(RL_agent_abc, Agent):
         collision = self.collision
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.hidden_rl_state, collision, self.age)
+        reward = self.reward_function.get_reward(self.hidden_rl_state, self.goal_tracker, collision, self.age)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.hidden_rl_state, collision, self.age)
+        done = self.reward_function.check_if_done(self.hidden_rl_state, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
         if not done:
             self.age += 1
@@ -196,7 +197,8 @@ class DQL_agent(RL_agent_abc, Agent):
             return
 
         # --> Randomly sample minibatch from the memory
-        minibatch = random.sample(self.memory, self.settings.rl_behavior_settings.minibatch_size)
+        minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
+        # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
         # --> Get current states from minibatch (rgb normalised)
         current_states = np.array([transition[0] for transition in minibatch])/255

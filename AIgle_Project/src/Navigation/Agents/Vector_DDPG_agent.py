@@ -43,10 +43,14 @@ class DDPG_agent(RL_agent_abc, Agent):
         super().__init__(client, name)
 
         # --> Setup rl settings
-        self.settings.rl_behavior_settings.gen_ddql_settings()
+        self.settings.rl_behavior_settings.gen_ddpg_settings()
 
         # --> Setup tools
         self.noise = OUAction_noise(mu=np.zeros(len(self.action_lst)))
+
+        # --> Setup rewards
+        self.reward_function = Reward_function()
+        self.goal_tracker = 0
 
         # ---- Setup agent properties
         # --> Setup model
@@ -71,10 +75,6 @@ class DDPG_agent(RL_agent_abc, Agent):
             print("!!!!! Invalid memory setting !!!!!")
             sys.exit()
 
-        # --> Setup rewards
-        self.reward_function = Reward_function()
-        self.goal_tracker = 0
-
         # ---- Setup trackers
         # --> Step trackers
         self.observation_history = [self.observation]
@@ -93,9 +93,9 @@ class DDPG_agent(RL_agent_abc, Agent):
     @property
     def observation(self):
         # --> Determine vector to next goal
-        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x
-        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y
-        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z
+        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val
+        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
+        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
 
         # --> Determine velocity vector magnitude ot next goal
         linear_velocity_magnitude = (abs(self.state.kinematics_estimated.linear_velocity.x_val)
@@ -168,7 +168,7 @@ class DDPG_agent(RL_agent_abc, Agent):
         reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age)
+        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
         if not done:
             self.age += 1
@@ -191,7 +191,7 @@ class DDPG_agent(RL_agent_abc, Agent):
             return
 
         # --> Randomly sample minibatch from the memory
-        minibatch, indices = self.memory.sample_memory(self.settings.rl_behavior_settings.minibatch_size)
+        minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
 
         # --> Get current states, action and next states from minibatch
         batch_current_states = np.array([transition[0] for transition in minibatch])

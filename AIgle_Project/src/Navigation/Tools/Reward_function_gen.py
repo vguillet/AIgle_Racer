@@ -33,7 +33,7 @@ class Reward_function(object):
     def get_reward(self, state, goal, collision, age):
         if collision is True:
             # --> Negative reward if a collision occurred
-            reward = -1000 * age
+            reward = -1000
 
         else:
             # --> Set default reward to 0

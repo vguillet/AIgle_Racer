@@ -25,8 +25,8 @@ class Prioritized_experience_replay_memory(object):
     def __init__(self, max_size, memory_ref=None):
 
         if memory_ref is not None:
-            self.memory, self.priorities, self.indexes = self.load_replay_memory(memory_ref)
-            self.memory_size = len(self.memory)
+            self.memory, self.priorities, self.indexes = self.load(memory_ref)
+            self.memory_size = self.length
 
         else:
             self.memory_size = max_size
@@ -53,14 +53,14 @@ class Prioritized_experience_replay_memory(object):
             self.priorities[index-1] = priority + 1
         return
 
-    def sample_memory(self, batch_size):
+    def sample(self, batch_size):
         # --> Sample memory according to priorities
         indices = random.choices(self.indexes, weights=self.priorities, k=batch_size)
         minibatch = [self.memory[indx - 1] for indx in indices]
 
         return minibatch, indices
 
-    def save_replay_memory(self, ref):
+    def save(self, ref):
         # --> Record replay memory
         with open('Data/ddpg/PR_replay_memory/RM_' + ref, 'wb') as file:
             pickle.dump({'memory': self.memory}, file)
@@ -68,6 +68,6 @@ class Prioritized_experience_replay_memory(object):
             pickle.dump({'indexes': self.indexes}, file)
         return
 
-    def load_replay_memory(self, memory_ref):
+    def load(self, memory_ref):
         # TODO: Add load pickle
         return
