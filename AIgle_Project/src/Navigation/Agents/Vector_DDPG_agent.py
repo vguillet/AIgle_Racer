@@ -18,8 +18,8 @@ import tensorflow as tf
 from AIgle_Project.src.Tools.Agent import Agent
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 
-from AIgle_Project.src.Navigation.Models.Actor_DDQL import Actor_DDQL
-from AIgle_Project.src.Navigation.Models.Critic_DDQL import Critic_DDQL
+from AIgle_Project.src.Navigation.Models.Vector_Actor_DDQL_model import Vector_Actor_DDQL_model
+from AIgle_Project.src.Navigation.Models.Vector_Critic_DDQL_model import Vector_Critic_DDQL_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
@@ -34,7 +34,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class DDPG_agent(RL_agent_abc, Agent):
+class Vector_DDPG_agent(RL_agent_abc, Agent):
     def __init__(self, client, name, memory_type="simple",
                  memory_ref=None,
                  actor_ref=None,
@@ -54,15 +54,15 @@ class DDPG_agent(RL_agent_abc, Agent):
 
         # ---- Setup agent properties
         # --> Setup model
-        self.actor_model = Actor_DDQL("Actor",
-                                      len(self.observation),
-                                      len(self.action_lst),
-                                      model_ref=actor_ref)
+        self.actor_model = Vector_Actor_DDQL_model("Actor",
+                                                   len(self.observation),
+                                                   len(self.action_lst),
+                                                   model_ref=actor_ref)
 
-        self.critic_model = Critic_DDQL("Critic",
-                                        len(self.observation),
-                                        len(self.action_lst),
-                                        model_ref=critic_ref)
+        self.critic_model = Vector_Critic_DDQL_model("Critic",
+                                                     len(self.observation),
+                                                     len(self.action_lst),
+                                                     model_ref=critic_ref)
 
         # --> Setup memory
         if memory_type == "simple":

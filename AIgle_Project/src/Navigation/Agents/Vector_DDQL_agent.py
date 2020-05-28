@@ -19,7 +19,7 @@ from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 from AIgle_Project.src.Tools.Agent import Agent
 
 from AIgle_Project.src.State_estimation.Camera import Camera
-from AIgle_Project.src.Navigation.Models.Vector_DDQL import Vector_DDQL
+from AIgle_Project.src.Navigation.Models.Vector_DDQL_model import Vector_DDQL_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
@@ -34,7 +34,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class DQL_agent(RL_agent_abc, Agent):
+class Vector_DDQL_agent(RL_agent_abc, Agent):
     def __init__(self, client, name, memory_type="simple",
                  memory_ref=None,
                  model_ref=None):
@@ -53,10 +53,10 @@ class DQL_agent(RL_agent_abc, Agent):
 
         # ---- Setup agent properties
         # --> Setup model
-        self.model = Vector_DDQL("Actor",
-                                 len(self.observation),
-                                 len(self.action_lst),
-                                 model_ref=model_ref)
+        self.model = Vector_DDQL_model("Actor",
+                                       len(self.observation),
+                                       len(self.action_lst),
+                                       model_ref=model_ref)
 
         # --> Setup memory
         if memory_type == "simple":

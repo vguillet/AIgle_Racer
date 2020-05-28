@@ -34,7 +34,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class DQL_agent(RL_agent_abc, Agent):
+class Image_DQL_agent(RL_agent_abc, Agent):
     def __init__(self, client, name, memory_type="simple",
                  memory_ref=None,
                  model_ref=None):

@@ -30,7 +30,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class Vector_DDQL(DDQL_model):
+class Vector_DDQL_model(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
                  checkpoint_directory="Data/ddpg/actor", model_ref=None):

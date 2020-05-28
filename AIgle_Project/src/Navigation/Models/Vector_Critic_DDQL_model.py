@@ -24,7 +24,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class Critic_DDQL(DDQL_model):
+class Vector_Critic_DDQL_model(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
                  checkpoint_directory="Data/ddpg/critic", model_ref=None):
