@@ -18,7 +18,7 @@ from itertools import combinations, permutations, product
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 from AIgle_Project.src.Tools.Agent import Agent
 
-from AIgle_Project.src.Vision.Camera import Camera
+from AIgle_Project.src.State_estimation.Camera import Camera
 from AIgle_Project.src.Navigation.Models.Simple_image_models import Simple_image_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
@@ -148,9 +148,9 @@ class DQL_agent(RL_agent_abc, Agent):
     def get_qs(self):
         return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
 
-    def step(self, action):
+    def step(self, action_ref):
         # --> Determine action requested
-        action = self.action_lst[action]
+        action = self.action_lst[action_ref]
 
         # --> Determine target new state
         current_state = self.hidden_rl_state
@@ -169,7 +169,7 @@ class DQL_agent(RL_agent_abc, Agent):
         # --> Move to target
         self.move(next_state)
 
-        collision = self.collision
+        collision = self.check_final_state
 
         # --> Determine reward based on resulting state
         reward = self.reward_function.get_reward(self.hidden_rl_state, self.goal_tracker, collision, self.age)

@@ -39,10 +39,10 @@ class Actor_model(ACRL_model):
     def create_network(self):
         # TODO: Review model
 
-        state = Input(shape=self.input_dims, dtype='float32')
+        observation = Input(shape=self.input_dims, dtype='float32')
         x = Dense(400, activation='relu',
                   kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
-                                        1 / np.sqrt(self.input_dims)))(state)
+                                        1 / np.sqrt(self.input_dims)))(observation)
 
         x = Dense(300, activation='relu',
                   kernel_initializer=RU(-1 / np.sqrt(400), 1 / np.sqrt(400)))(x)
@@ -51,5 +51,5 @@ class Actor_model(ACRL_model):
                     activation='tanh',
                     kernel_initializer=RU(-0.003, 0.003))(x)
 
-        model = Model(inputs=state, outputs=out)
+        model = Model(inputs=observation, outputs=out)
         return model

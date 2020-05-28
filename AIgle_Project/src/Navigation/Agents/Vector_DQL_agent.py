@@ -6,26 +6,26 @@
 
 # Built-in/Generic Imports
 import sys
+import random
+import time
 
 # Libs
 import numpy as np
-from itertools import combinations, product
-from tensorflow.keras.optimizers import Adam
-
-import tensorflow as tf
+from collections import deque
+from itertools import combinations, permutations, product
 
 # Own modules
-from AIgle_Project.src.Tools.Agent import Agent
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
+from AIgle_Project.src.Tools.Agent import Agent
 
-from AIgle_Project.src.Navigation.Models.Actor_model import Actor_model
-from AIgle_Project.src.Navigation.Models.Critic_model import Critic_model
+from AIgle_Project.src.State_estimation.Camera import Camera
+from AIgle_Project.src.Navigation.Models.Simple_image_models import Simple_image_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
 
+from AIgle_Project.src.Navigation.Tools.Tensor_board_gen import ModifiedTensorBoard
 from AIgle_Project.src.Navigation.Tools.Reward_function_gen import Reward_function
-from AIgle_Project.src.Navigation.Tools.OUAction_noise import OUAction_noise
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -34,19 +34,21 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class DDPG_agent(RL_agent_abc, Agent):
+class DQL_agent(RL_agent_abc, Agent):
     def __init__(self, client, name, memory_type="simple",
                  memory_ref=None,
-                 actor_ref=None,
-                 critic_ref=None):
-
+                 model_ref=None):
         super().__init__(client, name)
 
         # --> Setup rl settings
-        self.settings.rl_behavior_settings.gen_ddpg_settings()
+        self.settings.rl_behavior_settings.gen_dql_settings()
 
-        # --> Setup tools
-        self.noise = OUAction_noise(mu=np.zeros(len(self.action_lst)))
+        # --> Create custom tensorboard object
+        # TODO: Fix tensorboard
+        # self.tensorboard = ModifiedTensorBoard(log_dir="logs/{}-{}".format("", int(time.time())))
+
+        # --> Setup camera
+        self.camera = Camera(client, "0", 0)
 
         # --> Setup rewards
         self.reward_function = Reward_function()
@@ -54,15 +56,10 @@ class DDPG_agent(RL_agent_abc, Agent):
 
         # ---- Setup agent properties
         # --> Setup model
-        self.actor_model = Actor_model("Actor",
-                                       len(self.observation),
-                                       len(self.action_lst),
-                                       model_ref=actor_ref)
-
-        self.critic_model = Critic_model("Critic",
-                                         len(self.observation),
-                                         len(self.action_lst),
-                                         model_ref=critic_ref)
+        self.model = Simple_image_model("Simple_model",
+                                        self.observation.shape,
+                                        len(self.action_lst),
+                                        model_ref=model_ref)
 
         # --> Setup memory
         if memory_type == "simple":
@@ -76,6 +73,9 @@ class DDPG_agent(RL_agent_abc, Agent):
             sys.exit()
 
         # ---- Setup trackers
+        # --> Used to count when to update target network with main network's weights
+        self.target_update_counter = 0
+
         # --> Step trackers
         self.observation_history = [self.observation]
         self.action_history = []
@@ -92,17 +92,31 @@ class DDPG_agent(RL_agent_abc, Agent):
 
     @property
     def observation(self):
-        # --> Determine vector to next goal
-        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val
-        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
-        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
 
-        # --> Determine velocity vector magnitude ot next goal
+        response = self.camera.fetch_single_img()
+
+        # --> Get numpy array
+        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)
+
+        # --> Reshape array to 4 channel image array H X W X 4
+        img_rgb = img1d.reshape(response.height, response.width, 3)
+
+        # --> Flip (original image is flipped vertically)
+        img_rgb = np.flipud(img_rgb)
+
+        return img_rgb
+
+    @property
+    def hidden_rl_state(self):
+
         linear_velocity_magnitude = (abs(self.state.kinematics_estimated.linear_velocity.x_val)
                                      + abs(self.state.kinematics_estimated.linear_velocity.y_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val)) / 3
+                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val))/3
 
-        return [x, y, z, linear_velocity_magnitude]
+        return ((self.state.kinematics_estimated.position.x_val,
+                self.state.kinematics_estimated.position.y_val,
+                self.state.kinematics_estimated.position.z_val),
+                linear_velocity_magnitude)
 
     @property
     def action_lst(self):
@@ -130,22 +144,16 @@ class DDPG_agent(RL_agent_abc, Agent):
 
         return action_lst
 
+    # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
-        # --> Queries actor main network for Q values given current observation
-        action = self.actor_model.main_network.predict(self.observation).ravel()[0]
-        noisy_action = action + self.noise()
-        print(action)
-        # TODO: Scale actions to match action space
-        self.action_history.append(action)
-
-        return action
+        return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
 
     def step(self, action):
         # --> Determine action requested
         action = self.action_lst[action]
 
         # --> Determine target new state
-        current_state = self.observation
+        current_state = self.hidden_rl_state
         next_state = [[round(current_state[0][0] + action[0][0], 1),
                       round(current_state[0][1] + action[0][1], 1),
                       round(current_state[0][2] + action[0][2], 1)],
@@ -161,14 +169,13 @@ class DDPG_agent(RL_agent_abc, Agent):
         # --> Move to target
         self.move(next_state)
 
-        # --> Evaluate collision
         collision = self.check_final_state
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age)
+        reward = self.reward_function.get_reward(self.hidden_rl_state, self.goal_tracker, collision, self.age)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
+        done = self.reward_function.check_if_done(self.hidden_rl_state, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
         if not done:
             self.age += 1
@@ -185,67 +192,68 @@ class DDPG_agent(RL_agent_abc, Agent):
         return
 
     def train(self):
-        # TODO: Connect settings to epoque
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
 
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
+        # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
-        # --> Get current states, action and next states from minibatch
-        batch_current_states = np.array([transition[0] for transition in minibatch])
-        batch_actions = np.array([transition[1] for transition in minibatch])
-        batch_next_states = np.array([transition[3] for transition in minibatch])
-
-        # --> Get next actions using actor target network
-        next_actions = self.actor_model.target_network.predict(batch_current_states)
-
-        # --> Gen Q value using critic target network
-        next_qs_list = self.critic_model.target_network.predict([batch_next_states, next_actions])
-
+        # --> Get current states from minibatch (rgb normalised)
+        current_states = np.array([transition[0] for transition in minibatch])/255
+        
+        # --> Query main model for Q values
+        current_qs_list = self.model.main_network.predict(current_states)
+        
+        # --> Get next states from minibatch
+        next_states = np.array([transition[3] for transition in minibatch])/255
+        
+        # --> Query target model for Q values
+        future_qs_list = self.model.target_network.predict(next_states)
+        
         # --> Creating feature set and target list
+        x = []      # Images
         y = []      # Resulting Q values
-
+        
         # --> Enumerating the batches (tuple is content of minibatch, see remember)
-        for i, (current_state, action, reward, next_state, done) in enumerate(minibatch):
+        for index, (current_state, action, reward, next_state, done) in enumerate(minibatch):
             if not done:
-                # --> If not done, get new q from reward and Q_next
-                y[i] = reward + next_qs_list[i] * self.settings.rl_behavior_settings.discount
+                # --> If not done, get new q from future states
+                max_future_q = np.max(future_qs_list[index])
+                new_q = reward + self.settings.rl_behavior_settings.discount * max_future_q
+            else:
+                # --> If done, set new q equal reward
+                new_q = reward
 
-        # --> Converting y to array
-        y = np.array(y)
+            # --> Update Q value for given state
+            current_qs = current_qs_list[index]
+            current_qs[action] = new_q
 
-        # --> Updating priorities if using Prioritized experience replay
-        if indices is not None:
-            td_error = np.abs(y - self.critic_model.main_network.predict([batch_current_states, batch_actions]))
-            self.memory.update_priorities(indices, td_error)
+            # --> Append to training data
+            x.append(current_state)
+            y.append(current_qs)
 
-        # --> Training critics on batch
-        self.critic_model.main_network.train_on_batch([batch_current_states, batch_actions], y)
+        # --> Fit main model on all samples as one batch, log only on terminal state
+        # TODO: Fix tensorboard
+        # self.main_model.fit(np.array(x)/255, np.array(y),
+        #                     batch_size=self.settings.rl_behavior_settings.minibatch_size,
+        #                     verbose=0,
+        #                     shuffle=False,
+        #                     callbacks=[self.tensorboard] if terminal_state else None)
 
-        # --> Determining gradient difference
-        with tf.GradientTape() as tape:
-            a = self.actor_model.main_network(batch_current_states)
-            tape.watch(a)
-            q = self.critic_model.main_network([batch_current_states, a])
+        self.model.main_network.fit(np.array(x)/255, np.array(y),
+                                    batch_size=self.settings.rl_behavior_settings.minibatch_size,
+                                    verbose=0,
+                                    shuffle=False)
 
-        # --> Getting the gradient of a and q
-        dq_da_gradient = tape.gradient(q, a)
+        if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
+            # --> Update target network with weights of main network
+            self.model.target_network.set_weights(self.model.main_network.get_weights())
 
-        with tf.GradientTape() as tape:
-            a = self.actor_model.main_network(batch_current_states)
-            theta = self.actor_model.main_network.trainable_variables
+            # --> Reset target_update_counter
+            self.target_update_counter = 0
 
-        # --> Getting the gradient of a and theta
-        da_dtheta = tape.gradient(a, theta, output_gradients=-dq_da_gradient)
-
-        actor_opt = Adam(self.settings.rl_behavior_settings.actor_learning_rate)
-        actor_opt.apply_gradients(zip(da_dtheta, self.actor_model.main_network.trainable_variables))
-
-        # --> Update models targets
-        self.actor_model.soft_update_target(self.settings.rl_behavior_settings.tau)
-        self.critic_model.soft_update_target(self.settings.rl_behavior_settings.tau)
         return
 
     def reset(self, random_starting_pos=False):
@@ -264,12 +272,15 @@ class DDPG_agent(RL_agent_abc, Agent):
         # --> Reset agent properties
         self.age = 0
 
-        # Record episode trackers to timeline trackers
+        # --> Record episode trackers to timeline trackers
         self.observation_timeline += self.observation_history
         self.action_timeline += self.action_history
         self.reward_timeline += self.reward_history
 
-        # Reset step trackers
+        # --> Reset step trackers
         self.observation_history = [self.observation]
         self.action_history = []
         self.reward_history = []
+
+        # --> Update target network counter
+        self.target_update_counter += 1

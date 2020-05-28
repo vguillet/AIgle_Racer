@@ -43,10 +43,6 @@ class Agent(object):
     def state(self):
         return self.client.getMultirotorState()
 
-    @property
-    def collision(self):
-        return self.client.simGetCollisionInfo().has_collided
-
     def move(self, new_state):
         # --> Move drone to specified position
         self.client.moveToPositionAsync(new_state[0][0],
@@ -56,6 +52,10 @@ class Agent(object):
                                         ).join()
 
         return
+
+    @property
+    def check_final_state(self):
+        return self.client.simGetCollisionInfo().has_collided
 
     def reset(self, random_starting_pos=False):
         self.age = 0
