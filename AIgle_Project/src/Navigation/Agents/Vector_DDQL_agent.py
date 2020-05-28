@@ -19,7 +19,7 @@ from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 from AIgle_Project.src.Tools.Agent import Agent
 
 from AIgle_Project.src.State_estimation.Camera import Camera
-from AIgle_Project.src.Navigation.Models.Simple_image_models import Simple_image_model
+from AIgle_Project.src.Navigation.Models.Vector_DDQL import Vector_DDQL
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
@@ -47,19 +47,16 @@ class DQL_agent(RL_agent_abc, Agent):
         # TODO: Fix tensorboard
         # self.tensorboard = ModifiedTensorBoard(log_dir="logs/{}-{}".format("", int(time.time())))
 
-        # --> Setup camera
-        self.camera = Camera(client, "0", 0)
-
         # --> Setup rewards
         self.reward_function = Reward_function()
         self.goal_tracker = 0
 
         # ---- Setup agent properties
         # --> Setup model
-        self.model = Simple_image_model("Simple_model",
-                                        self.observation.shape,
-                                        len(self.action_lst),
-                                        model_ref=model_ref)
+        self.model = Vector_DDQL("Actor",
+                                 len(self.observation),
+                                 len(self.action_lst),
+                                 model_ref=model_ref)
 
         # --> Setup memory
         if memory_type == "simple":
@@ -74,6 +71,7 @@ class DQL_agent(RL_agent_abc, Agent):
 
         # ---- Setup trackers
         # --> Used to count when to update target network with main network's weights
+        # TODO: Implemented blended hard/soft update
         self.target_update_counter = 0
 
         # --> Step trackers
@@ -92,31 +90,17 @@ class DQL_agent(RL_agent_abc, Agent):
 
     @property
     def observation(self):
+        # --> Determine vector to next goal
+        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val
+        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
+        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
 
-        response = self.camera.fetch_single_img()
-
-        # --> Get numpy array
-        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)
-
-        # --> Reshape array to 4 channel image array H X W X 4
-        img_rgb = img1d.reshape(response.height, response.width, 3)
-
-        # --> Flip (original image is flipped vertically)
-        img_rgb = np.flipud(img_rgb)
-
-        return img_rgb
-
-    @property
-    def hidden_rl_state(self):
-
+        # --> Determine velocity vector magnitude ot next goal
         linear_velocity_magnitude = (abs(self.state.kinematics_estimated.linear_velocity.x_val)
                                      + abs(self.state.kinematics_estimated.linear_velocity.y_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val))/3
+                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val)) / 3
 
-        return ((self.state.kinematics_estimated.position.x_val,
-                self.state.kinematics_estimated.position.y_val,
-                self.state.kinematics_estimated.position.z_val),
-                linear_velocity_magnitude)
+        return [x, y, z, linear_velocity_magnitude]
 
     @property
     def action_lst(self):
@@ -153,7 +137,7 @@ class DQL_agent(RL_agent_abc, Agent):
         action = self.action_lst[action]
 
         # --> Determine target new state
-        current_state = self.hidden_rl_state
+        current_state = self.observation
         next_state = [[round(current_state[0][0] + action[0][0], 1),
                       round(current_state[0][1] + action[0][1], 1),
                       round(current_state[0][2] + action[0][2], 1)],
@@ -172,10 +156,10 @@ class DQL_agent(RL_agent_abc, Agent):
         collision = self.check_final_state
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.hidden_rl_state, self.goal_tracker, collision, self.age)
+        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.hidden_rl_state, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
+        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
         if not done:
             self.age += 1
@@ -192,6 +176,7 @@ class DQL_agent(RL_agent_abc, Agent):
         return
 
     def train(self):
+        # TODO: Connect settings to epoque
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
@@ -201,13 +186,13 @@ class DQL_agent(RL_agent_abc, Agent):
         # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
         # --> Get current states from minibatch (rgb normalised)
-        current_states = np.array([transition[0] for transition in minibatch])/255
+        current_states = np.array([transition[0] for transition in minibatch])
         
         # --> Query main model for Q values
         current_qs_list = self.model.main_network.predict(current_states)
         
         # --> Get next states from minibatch
-        next_states = np.array([transition[3] for transition in minibatch])/255
+        next_states = np.array([transition[3] for transition in minibatch])
         
         # --> Query target model for Q values
         future_qs_list = self.model.target_network.predict(next_states)
@@ -236,13 +221,13 @@ class DQL_agent(RL_agent_abc, Agent):
 
         # --> Fit main model on all samples as one batch, log only on terminal state
         # TODO: Fix tensorboard
-        # self.main_model.fit(np.array(x)/255, np.array(y),
+        # self.main_model.fit(np.array(x), np.array(y),
         #                     batch_size=self.settings.rl_behavior_settings.minibatch_size,
         #                     verbose=0,
         #                     shuffle=False,
         #                     callbacks=[self.tensorboard] if terminal_state else None)
 
-        self.model.main_network.fit(np.array(x)/255, np.array(y),
+        self.model.main_network.fit(np.array(x), np.array(y),
                                     batch_size=self.settings.rl_behavior_settings.minibatch_size,
                                     verbose=0,
                                     shuffle=False)

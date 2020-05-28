@@ -21,7 +21,7 @@ from keras.optimizers import Adam
 import tensorflow as tf
 
 # Own modules
-from AIgle_Project.src.Navigation.Models.ACRL_model_frame import ACRL_model
+from AIgle_Project.src.Navigation.Models.DDQL_model import DDQL_model
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -30,7 +30,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class Actor_model(ACRL_model):
+class Vector_DDQL(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
                  checkpoint_directory="Data/ddpg/actor", model_ref=None):

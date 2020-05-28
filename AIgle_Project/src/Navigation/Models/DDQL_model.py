@@ -20,7 +20,7 @@ __date__ = '26/04/2020'
 ##################################################################################################################
 
 
-class ACRL_model(object):
+class DDQL_model(object):
     def __init__(self, name,
                  input_dims, nb_actions,
                  checkpoint_directory, model_ref=None):
