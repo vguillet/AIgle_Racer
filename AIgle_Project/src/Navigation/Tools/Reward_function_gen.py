@@ -33,7 +33,7 @@ class Reward_function(object):
     def get_reward(self, state, goal, collision, age):
         if collision is True:
             # --> Negative reward if a collision occurred
-            reward = -1000
+            reward = -100
 
         else:
             # --> Set default reward to 0
@@ -49,7 +49,7 @@ class Reward_function(object):
 
                            / math.sqrt(self.goal_dict[str(goal)]["x"]**2
                                        + self.goal_dict[str(goal)]["y"]**2
-                                       + self.goal_dict[str(goal)]["z"]**2)) * age
+                                       + self.goal_dict[str(goal)]["z"]**2))
 
         return reward
 

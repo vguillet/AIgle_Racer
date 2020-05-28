@@ -38,6 +38,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
     def __init__(self, client, name, memory_type="simple",
                  memory_ref=None,
                  model_ref=None):
+
         super().__init__(client, name)
 
         # --> Setup rl settings
@@ -54,7 +55,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # ---- Setup agent properties
         # --> Setup model
         self.model = Vector_DDQL_model("Actor",
-                                       len(self.observation),
+                                       (1, len(self.observation)),
                                        len(self.action_lst),
                                        model_ref=model_ref)
 
@@ -100,7 +101,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
                                      + abs(self.state.kinematics_estimated.linear_velocity.y_val)
                                      + abs(self.state.kinematics_estimated.linear_velocity.z_val)) / 3
 
-        return [x, y, z, linear_velocity_magnitude]
+        return [[x, y, z], linear_velocity_magnitude]
 
     @property
     def action_lst(self):
@@ -138,6 +139,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # --> Determine target new state
         current_state = self.observation
+
         next_state = [[round(current_state[0][0] + action[0][0], 1),
                       round(current_state[0][1] + action[0][1], 1),
                       round(current_state[0][2] + action[0][2], 1)],
@@ -234,7 +236,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
             # --> Update target network with weights of main network
-            self.model.target_network.set_weights(self.model.main_network.get_weights())
+            self.model.hard_update_target()
 
             # --> Reset target_update_counter
             self.target_update_counter = 0

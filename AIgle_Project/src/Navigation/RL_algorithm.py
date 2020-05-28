@@ -19,6 +19,7 @@ from AIgle_Project.src.Navigation.Tools.ML_tools import ML_tools
 from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 
 from AIgle_Project.src.Navigation.Agents.Image_DQL_agent import Image_DQL_agent
+from AIgle_Project.src.Navigation.Agents.Vector_DDQL_agent import Vector_DDQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
 
 __version__ = '1.1.1'
@@ -44,10 +45,10 @@ class RL_navigation:
         rl_tools = RL_tools()
 
         # ---- Create agent
-        agent = Image_DQL_agent(client, "1",
-                                memory_type=settings.rl_behavior_settings.memory_type,
-                                memory_ref=settings.rl_behavior_settings.memory_ref,
-                                model_ref=settings.rl_behavior_settings.model_ref)
+        agent = Vector_DDQL_agent(client, "1",
+                                  memory_type=settings.rl_behavior_settings.memory_type,
+                                  memory_ref=settings.rl_behavior_settings.memory_ref,
+                                  model_ref=settings.rl_behavior_settings.model_ref)
 
         # agent = DDPG_agent(client, "1",
         #                    memory_type=settings.rl_behavior_settings.memory_type,

@@ -16,7 +16,7 @@ import numpy as np
 from keras.initializers import RandomUniform as RU
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Concatenate
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
 
 import tensorflow as tf
 
@@ -39,17 +39,23 @@ class Vector_DDQL_model(DDQL_model):
     def create_network(self):
         # TODO: Review model
 
-        observation = Input(shape=self.input_dims, dtype='float32')
-        x = Dense(400, activation='relu',
-                  kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
-                                        1 / np.sqrt(self.input_dims)))(observation)
+        X_input = Input(self.input_dims)
 
-        x = Dense(300, activation='relu',
-                  kernel_initializer=RU(-1 / np.sqrt(400), 1 / np.sqrt(400)))(x)
+        # 'Dense' is the basic form of a neural network layer
+        # Input Layer of state size(4) and Hidden Layer with 512 nodes
+        X = Dense(512, input_shape=self.input_dims, activation="relu", kernel_initializer='he_uniform')(X_input)
 
-        out = Dense(self.action_dims,
-                    activation='tanh',
-                    kernel_initializer=RU(-0.003, 0.003))(x)
+        # Hidden layer with 256 nodes
+        X = Dense(256, activation="relu", kernel_initializer='he_uniform')(X)
 
-        model = Model(inputs=observation, outputs=out)
+        # Hidden layer with 64 nodes
+        X = Dense(64, activation="relu", kernel_initializer='he_uniform')(X)
+
+        # Output Layer with # of actions: 2 nodes (left, right)
+        X = Dense(self.action_dims, activation="linear", kernel_initializer='he_uniform')(X)
+
+        model = Model(inputs=X_input, outputs=X, name='CartPole DQN model')
+        model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+
+        model.summary()
         return model

@@ -32,7 +32,7 @@ client.simPause(False)
 # ---- Creation of various code components
 # --> Setup navigation
 
-# rl_navigation = RL_navigation(client)
+rl_navigation = RL_navigation(client)
 
 predefined_navigation = predefined_navigation(client)
 
