@@ -28,7 +28,7 @@ class DDQL_model(object):
         # ---- Initiate model parameters
         self.name = name
         self.input_dims = input_dims
-        self.action_dims = nb_actions
+        self.nb_action = nb_actions
 
         self.params = tf.keras.Input(shape=(), dtype=tf.dtypes.float32)
 

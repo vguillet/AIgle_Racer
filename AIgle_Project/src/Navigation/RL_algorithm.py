@@ -95,10 +95,11 @@ class RL_navigation:
             while not done:
                 # --> Get a random value
                 # if np.random.random() > settings.rl_behavior_settings.epsilon:
-                if np.random.randint(0, 100) > 1000:
+                if np.random.randint(0, 100) > 0:
 
                     # --> Get best action from main model
-                    action = agent.get_qs()
+                    action = np.argmax(agent.get_qs())
+
                 else:
                     # Get random action
                     action = np.random.randint(0, len(agent.action_lst))

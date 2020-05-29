@@ -55,7 +55,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # ---- Setup agent properties
         # --> Setup model
         self.model = Vector_DDQL_model("Actor",
-                                       (1, len(self.observation)),
+                                       self.observation.shape,
                                        len(self.action_lst),
                                        model_ref=model_ref)
 
@@ -101,7 +101,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         v = round(self.state.kinematics_estimated.linear_velocity.y_val, 1)
         w = round(self.state.kinematics_estimated.linear_velocity.z_val, 1)
 
-        return [x, y, z, u, v, w]
+        return np.array([x, y, z, u, v, w])
 
     @property
     def action_lst(self):
@@ -152,7 +152,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
-        return self.model.main_network.predict(np.array(self.observation))
+        return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape))[0]
 
     def step(self, action):
         # --> Determine action requested
@@ -199,6 +199,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return self.observation, reward, done
 
     def remember(self, current_state, action, reward, next_state, done):
+        print(current_state, action, reward, next_state, done)
         self.memory.remember(current_state, action, reward, next_state, done)
         return
 
@@ -216,13 +217,11 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # --> Get current states from minibatch (rgb normalised)
         current_states = np.array([transition[0] for transition in minibatch])
-
         # --> Query main model for Q values
         current_qs_list = self.model.main_network.predict(current_states)
 
         # --> Get next states from minibatch
         next_states = np.array([transition[3] for transition in minibatch])
-
         # --> Query target model for Q values
         future_qs_list = self.model.target_network.predict(next_states)
 

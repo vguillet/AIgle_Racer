@@ -39,6 +39,8 @@ class Vector_DDQL_model(DDQL_model):
     def create_network(self):
         # TODO: Review model
 
+        print("\n self.input_dims:", self.input_dims)
+
         X_input = Input(self.input_dims)
 
         # 'Dense' is the basic form of a neural network layer
@@ -52,10 +54,9 @@ class Vector_DDQL_model(DDQL_model):
         X = Dense(64, activation="relu", kernel_initializer='he_uniform')(X)
 
         # Output Layer with # of actions: 2 nodes (left, right)
-        X = Dense(self.action_dims, activation="linear", kernel_initializer='he_uniform')(X)
+        X = Dense(self.nb_action, activation="linear", kernel_initializer='he_uniform')(X)
 
         model = Model(inputs=X_input, outputs=X, name='CartPole DQN model')
         model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
-        model.summary()
         return model
