@@ -5,6 +5,7 @@
 """
 
 # Built-in/Generic Imports
+import random
 
 # Libs
 import numpy as np
@@ -43,6 +44,9 @@ class RL_navigation:
         # --> Initialise tools
         ml_tools = ML_tools()
         rl_tools = RL_tools()
+
+        # --> Seed numpy
+        random.seed(10)
 
         # ---- Create agent
         agent = Vector_DDQL_agent(client, "1",
@@ -94,8 +98,8 @@ class RL_navigation:
                                     label="Steps")
             while not done:
                 # --> Get a random value
-                # if np.random.random() > settings.rl_behavior_settings.epsilon:
-                if np.random.randint(0, 100) > 0:
+                if random.randint(0, 100) > settings.rl_behavior_settings.epsilon:
+                # if np.random.randint(0, 100) > 0:
 
                     # --> Get best action from main model
                     action = np.argmax(agent.get_qs())

@@ -31,19 +31,18 @@ class Reward_function(object):
         return
 
     def get_reward(self, state, goal, collision, age):
+        distance_from_goal = math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2)
+
         if collision is True:
             # --> Negative reward if a collision occurred
             reward = -10
 
         else:
-            # --> Set default reward to 0
-            reward = 0
+            if distance_from_goal < 1:
+                reward = 100
 
-            # # --> Check x position
-            # if -2.65 <= state[0] <= 3.27 and -28 <= state[1] <= -29 and -4.93 <= state[2] <= 0.7596:
-            #     pass
-            # else:
-            reward = -math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2)
+            else:
+                reward = -math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2)
 
         return reward
 

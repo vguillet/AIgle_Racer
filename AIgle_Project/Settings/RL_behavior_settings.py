@@ -60,7 +60,7 @@ class RL_behavior_settings:
 
         self.minibatch_size = 20
         self.tau = 0.001                    # Rate at which target weights change
-        self.update_target_every = 5
+        self.update_target_every = 10
 
         # ---- Exploration settings
         self.epsilon = 25               # Probability (percent) of taking random action

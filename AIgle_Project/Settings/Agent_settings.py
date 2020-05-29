@@ -22,9 +22,9 @@ class Agent_settings:
         # --> Agent properties
         self.nb_agents = 1
 
-        self.agent_min_move = 3         # Min move
-        self.agent_max_move = 3        # Max move
+        self.agent_min_move = 0         # Min move
+        self.agent_max_move = 2        # Max move
 
-        self.agent_min_speed = 5        # Min speed
-        self.agent_max_speed = 5      # Max speed
-        self.max_step = 20
+        self.agent_min_speed = 3        # Min speed
+        self.agent_max_speed = 3      # Max speed
+        self.max_step = 15

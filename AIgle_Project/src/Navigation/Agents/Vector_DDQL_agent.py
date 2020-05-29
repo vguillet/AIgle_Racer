@@ -101,7 +101,8 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         v = round(self.state.kinematics_estimated.linear_velocity.y_val, 1)
         w = round(self.state.kinematics_estimated.linear_velocity.z_val, 1)
 
-        return np.array([x, y, z, u, v, w])
+        # return np.array([x, y, z, u, v, w])
+        return np.array([x, y, z])
 
     @property
     def action_lst(self):
@@ -199,7 +200,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return self.observation, reward, done
 
     def remember(self, current_state, action, reward, next_state, done):
-        print(current_state, action, reward, next_state, done)
+        # print(current_state, action, reward, next_state, done)
         self.memory.remember(current_state, action, reward, next_state, done)
         return
 
@@ -208,8 +209,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
-
-        print("\n ======================================= Training")
 
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
@@ -264,7 +263,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
             # --> Update target network with weights of main network
-            self.model.hard_update_target()
+            # self.model.hard_update_target()
 
             # --> Reset target_update_counter
             self.target_update_counter = 0

@@ -25,6 +25,9 @@ class DDQL_model(object):
                  input_dims, nb_actions,
                  checkpoint_directory, model_ref=None):
 
+        # --. Seed tensorflow
+        tf.random.set_seed(10)
+
         # ---- Initiate model parameters
         self.name = name
         self.input_dims = input_dims
