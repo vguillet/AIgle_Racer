@@ -40,12 +40,12 @@ class Reward_function(object):
             reward = 0
 
             # --> Check x position
-            if -2.65 <= state[0][0] <= 3.27 and -28 <= state[0][1] <= -29 and -4.93 <= state[0][2] <= 0.7596:
+            if -2.65 <= state[0] <= 3.27 and -28 <= state[1] <= -29 and -4.93 <= state[2] <= 0.7596:
                 pass
             else:
-                reward = -(math.sqrt((self.goal_dict[str(goal)]["x"] - state[0][0])**2
-                                     + (self.goal_dict[str(goal)]["y"] - state[0][1])**2
-                                     + (self.goal_dict[str(goal)]["z"] - state[0][2])**2)
+                reward = -(math.sqrt((self.goal_dict[str(goal)]["x"] - state[0])**2
+                                     + (self.goal_dict[str(goal)]["y"] - state[1])**2
+                                     + (self.goal_dict[str(goal)]["z"] - state[2])**2)
 
                            / math.sqrt(self.goal_dict[str(goal)]["x"]**2
                                        + self.goal_dict[str(goal)]["y"]**2
@@ -65,19 +65,19 @@ class Reward_function(object):
         else:
             # TODO: universalise reward function of gate passing (better value than 1?)
             # --> Check x position
-            if self.goal_dict[str(goal)]["x"]-1 <= state[0][0] <= self.goal_dict[str(goal)]["x"] + 1:
+            if self.goal_dict[str(goal)]["x"]-1 <= state[0] <= self.goal_dict[str(goal)]["x"] + 1:
                 pass
             else:
                 return False
 
             # --> Check y position
-            if self.goal_dict[str(goal)]["y"] - 1 <= state[0][1] <= self.goal_dict[str(goal)]["y"] + 1:
+            if self.goal_dict[str(goal)]["y"] - 1 <= state[1] <= self.goal_dict[str(goal)]["y"] + 1:
                 pass
             else:
                 return False
 
             # --> Check z position
-            if self.goal_dict[str(goal)]["z"] - 1 <= state[0][2] <= self.goal_dict[str(goal)]["z"] + 1:
+            if self.goal_dict[str(goal)]["z"] - 1 <= state[2] <= self.goal_dict[str(goal)]["z"] + 1:
                 pass
             else:
                 return False

@@ -96,19 +96,17 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
         z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
 
-        # --> Determine velocity vector magnitude ot next goal
-        linear_velocity_magnitude = (abs(self.state.kinematics_estimated.linear_velocity.x_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.y_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val)) / 3
+        # --> Determine velocity vector
+        u = self.state.kinematics_estimated.linear_velocity.x_val
+        v = self.state.kinematics_estimated.linear_velocity.y_val
+        w = self.state.kinematics_estimated.linear_velocity.z_val
 
-        return [[x, y, z], linear_velocity_magnitude]
+        return [x, y, z, u, v, w]
 
     @property
     def action_lst(self):
         possible_moves = []
         possible_speeds = []
-
-        action_lst = []
 
         # --> List all possible positions combinations
         for dimension in range(3):
@@ -119,15 +117,37 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         possible_moves = set(combinations(possible_moves, 3))
 
+        # --> Convert to lst of lst
+        possible_moves_lst = []
+        for moves in possible_moves:
+            possible_moves_lst.append(list(moves))
+
         # --> List all possible speeds
         for speed in range(self.settings.agent_settings.agent_min_speed,
                            self.settings.agent_settings.agent_max_speed + 1):
             possible_speeds.append(speed)
 
         # --> List all possible positions and speed combinations
-        action_lst = list(product(possible_moves, possible_speeds))
+        actions = list(product(possible_moves_lst, possible_speeds))
 
-        return action_lst
+        # --> Convert to lst of lst
+        action_lst = []
+        for action in actions:
+            action_lst.append(list(action))
+
+        flat_action_lst = []
+        # --> Flatten list
+        for action in action_lst:
+            item_lst = []
+            for item in action:
+                if type(item) is list:
+                    for subitem in item:
+                        item_lst.append(subitem)
+                else:
+                    item_lst.append(item)
+            flat_action_lst.append(item_lst)
+
+        return flat_action_lst
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
@@ -140,20 +160,20 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Determine target new state
         current_state = self.observation
 
-        next_state = [[round(current_state[0][0] + action[0][0], 1),
-                      round(current_state[0][1] + action[0][1], 1),
-                      round(current_state[0][2] + action[0][2], 1)],
-                      action[1]]
+        waypoint = [round(current_state[0] + action[0], 1),
+                    round(current_state[1] + action[1], 1),
+                    round(current_state[2] + action[2], 1),
+                    action[3]]
 
         # --> Limiting top and low
-        # TODO: Improve limits
-        if next_state[0][2] < -6:
-            next_state[0][2] = -6
-        elif next_state[0][2] >= 3.5:
-            next_state[0][2] = 3.5
+        # # TODO: Improve limits
+        if waypoint[2] < -6:
+            waypoint[2] = -6
+        elif waypoint[2] >= 3.5:
+            waypoint[2] = 3.5
 
         # --> Move to target
-        self.move(next_state)
+        self.move(waypoint)
 
         collision = self.check_final_state
 
@@ -233,6 +253,8 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
                                     batch_size=self.settings.rl_behavior_settings.minibatch_size,
                                     verbose=0,
                                     shuffle=False)
+
+        self.model.soft_update_target(self.settings.rl_behavior_settings.tau)
 
         if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
             # --> Update target network with weights of main network

@@ -59,6 +59,7 @@ class RL_behavior_settings:
         self.discount = 0.75            #                   short-term reward 0 <-- x --> 1 long-term reward
 
         self.minibatch_size = 20
+        self.tau = 0.001                    # Rate at which target weights change
         self.update_target_every = 5
 
         # ---- Exploration settings

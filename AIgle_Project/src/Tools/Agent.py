@@ -44,11 +44,13 @@ class Agent(object):
         return self.client.getMultirotorState()
 
     def move(self, new_state):
+        print("\nself.observation", self.observation)
+        print("new_state", new_state)
         # --> Move drone to specified position
-        self.client.moveToPositionAsync(new_state[0][0],
-                                        new_state[0][1],
-                                        new_state[0][2],
-                                        new_state[1]
+        self.client.moveToPositionAsync(new_state[0],   # x
+                                        new_state[1],   # y
+                                        new_state[2],   # z
+                                        new_state[3]
                                         ).join()
 
         return
