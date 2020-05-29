@@ -89,10 +89,14 @@ class RL_navigation:
             # TODO: Connect episode parameters
             learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
 
-            step_bar = Progress_bar(max_step=settings.agent_settings.max_step, label="Steps")
+            step_bar = Progress_bar(max_step=settings.agent_settings.max_step,
+                                    # overwrite_setting=False,
+                                    label="Steps")
             while not done:
                 # --> Get a random value
-                if np.random.random() > settings.rl_behavior_settings.epsilon:
+                # if np.random.random() > settings.rl_behavior_settings.epsilon:
+                if np.random.randint(0, 100) > 1000:
+
                     # --> Get best action from main model
                     action = agent.get_qs()
                 else:
@@ -119,7 +123,7 @@ class RL_navigation:
 
                 # --> Set current state as new state
                 current_state = new_state
-                
+
                 if not done:
                     step_bar.update_progress()
 

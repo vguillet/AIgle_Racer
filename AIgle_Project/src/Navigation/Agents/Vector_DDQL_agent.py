@@ -92,14 +92,14 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
     @property
     def observation(self):
         # --> Determine vector to next goal
-        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val
-        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
-        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
+        x = round(self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val, 1)
+        y = round(self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val, 1)
+        z = round(self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val, 1)
 
         # --> Determine velocity vector
-        u = self.state.kinematics_estimated.linear_velocity.x_val
-        v = self.state.kinematics_estimated.linear_velocity.y_val
-        w = self.state.kinematics_estimated.linear_velocity.z_val
+        u = round(self.state.kinematics_estimated.linear_velocity.x_val, 1)
+        v = round(self.state.kinematics_estimated.linear_velocity.y_val, 1)
+        w = round(self.state.kinematics_estimated.linear_velocity.z_val, 1)
 
         return [x, y, z, u, v, w]
 
@@ -130,6 +130,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> List all possible positions and speed combinations
         actions = list(product(possible_moves_lst, possible_speeds))
 
+        # TODO: Clean up
         # --> Convert to lst of lst
         action_lst = []
         for action in actions:
@@ -151,26 +152,30 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self):
-        return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape) / 255)[0]
+        return self.model.main_network.predict(np.array(self.observation))
 
     def step(self, action):
         # --> Determine action requested
         action = self.action_lst[action]
 
         # --> Determine target new state
-        current_state = self.observation
+        current_state = self.state
 
-        waypoint = [round(current_state[0] + action[0], 1),
-                    round(current_state[1] + action[1], 1),
-                    round(current_state[2] + action[2], 1),
+        waypoint = [round(current_state.kinematics_estimated.position.x_val + action[0], 1),
+                    round(current_state.kinematics_estimated.position.y_val + action[1], 1),
+                    round(current_state.kinematics_estimated.position.z_val + action[2], 1),
                     action[3]]
 
         # --> Limiting top and low
         # # TODO: Improve limits
         if waypoint[2] < -6:
             waypoint[2] = -6
-        elif waypoint[2] >= 3.5:
-            waypoint[2] = 3.5
+        elif waypoint[2] >= 3:
+            waypoint[2] = 3
+
+        # print([round(current_state.kinematics_estimated.position.x_val, 1),
+        #        round(current_state.kinematics_estimated.position.y_val, 1),
+        #        round(current_state.kinematics_estimated.position.z_val, 1)])
 
         # --> Move to target
         self.move(waypoint)
@@ -203,26 +208,28 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
 
+        print("\n ======================================= Training")
+
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
         # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
         # --> Get current states from minibatch (rgb normalised)
         current_states = np.array([transition[0] for transition in minibatch])
-        
+
         # --> Query main model for Q values
         current_qs_list = self.model.main_network.predict(current_states)
-        
+
         # --> Get next states from minibatch
         next_states = np.array([transition[3] for transition in minibatch])
-        
+
         # --> Query target model for Q values
         future_qs_list = self.model.target_network.predict(next_states)
-        
+
         # --> Creating feature set and target list
         x = []      # Images
         y = []      # Resulting Q values
-        
+
         # --> Enumerating the batches (tuple is content of minibatch, see remember)
         for index, (current_state, action, reward, next_state, done) in enumerate(minibatch):
             if not done:
@@ -266,6 +273,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return
 
     def reset(self, random_starting_pos=False):
+        print("====================================================================== Reset")
         # TODO: Implement random offset starting point
         # --> Reset Drone to starting position
         self.client.reset()
@@ -293,3 +301,5 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # --> Update target network counter
         self.target_update_counter += 1
+
+

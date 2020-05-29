@@ -44,8 +44,9 @@ class Agent(object):
         return self.client.getMultirotorState()
 
     def move(self, new_state):
-        print("\nself.observation", self.observation)
-        print("new_state", new_state)
+        # --> Restart simulation
+        self.client.simPause(False)
+
         # --> Move drone to specified position
         self.client.moveToPositionAsync(new_state[0],   # x
                                         new_state[1],   # y
@@ -53,6 +54,9 @@ class Agent(object):
                                         new_state[3]
                                         ).join()
 
+        # --> Pause simulation
+        self.client.simPause(True)
+        # time.sleep(1)
         return
 
     @property
