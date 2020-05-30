@@ -13,6 +13,7 @@ import pickle
 import numpy as np
 
 # Own modules
+from AIgle_Project.src.Tools.Python_tools import weighted_choice
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -51,10 +52,13 @@ class Prioritized_experience_replay_memory(object):
     def update_priorities(self, indices, priorities):
         for index, priority in zip(indices, priorities):
             self.priorities[index-1] = priority + 1
+
         return
 
     def sample(self, batch_size):
+        assert(len(self.memory) == len(self.priorities))
         # --> Sample memory according to priorities
+        # indices = weighted_choice(list(self.indexes), list(self.priorities), batch_size=batch_size)
         indices = random.choices(self.indexes, weights=self.priorities, k=batch_size)
         minibatch = [self.memory[indx - 1] for indx in indices]
 

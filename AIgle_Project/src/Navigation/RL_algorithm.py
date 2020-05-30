@@ -108,6 +108,8 @@ class RL_navigation:
                     # Get random action
                     action = np.random.randint(0, len(agent.action_lst))
 
+                    # action + random.uniform(0, len(agent.action_lst))
+
                 # --> Perform step using action
                 new_state, reward, done = agent.step(action)
 
@@ -139,6 +141,8 @@ class RL_navigation:
             # TODO: add checkpoint rate in settings
             if episode % 10 == 0:
                 plt.plot(ep_rewards)
+                plt.xlabel("Epoques")
+                plt.ylabel("Cumulated Reward")
                 plt.grid()
                 plt.show()
 

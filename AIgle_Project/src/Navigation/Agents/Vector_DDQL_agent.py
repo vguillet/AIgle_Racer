@@ -214,7 +214,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
         # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
-        # --> Get current states from minibatch (rgb normalised)
+        # --> Get current states from minibatch
         current_states = np.array([transition[0] for transition in minibatch])
         # --> Query main model for Q values
         current_qs_list = self.model.main_network.predict(current_states)
@@ -222,17 +222,20 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Get next states from minibatch
         next_states = np.array([transition[3] for transition in minibatch])
         # --> Query target model for Q values
-        future_qs_list = self.model.target_network.predict(next_states)
+        next_qs_list = self.model.target_network.predict(next_states)
+
+        # --> Creating new qs list
+        new_qs_lst = []
 
         # --> Creating feature set and target list
-        x = []      # Images
+        x = []      # States
         y = []      # Resulting Q values
 
-        # --> Enumerating the batches (tuple is content of minibatch, see remember)
+        # --> Enumerating the batches (tuple is content of minibatch)
         for index, (current_state, action, reward, next_state, done) in enumerate(minibatch):
             if not done:
                 # --> If not done, get new q from future states
-                max_future_q = np.max(future_qs_list[index])
+                max_future_q = np.max(next_qs_list[index])
                 new_q = reward + self.settings.rl_behavior_settings.discount * max_future_q
             else:
                 # --> If done, set new q equal reward
@@ -242,9 +245,31 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
 
+            # --> Append to new qs lst
+            new_qs_lst.append(new_q)
+
             # --> Append to training data
             x.append(current_state)
             y.append(current_qs)
+
+        # --> Turns lists to arrays
+        x = np.array(x)
+        y = np.array(y)
+
+        # --> Update priorities
+        if isinstance(self.memory, Prioritized_experience_replay_memory):
+            td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
+                              np.transpose(current_qs_list.max(axis=1)[np.newaxis]))
+
+            # print("\n\n")
+            # print(np.transpose(np.array([new_qs_lst])).shape)
+            # print(np.transpose(current_qs_list.max(axis=1)[np.newaxis]).shape)
+            # print(np.transpose(current_qs_list.max(axis=1)[np.newaxis]))
+            # print(td_error.shape)
+            # print(td_error)
+
+            # sys.exit()
+            self.memory.update_priorities(indices, td_error)
 
         # --> Fit main model on all samples as one batch, log only on terminal state
         # TODO: Fix tensorboard
@@ -254,7 +279,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         #                     shuffle=False,
         #                     callbacks=[self.tensorboard] if terminal_state else None)
 
-        self.model.main_network.fit(np.array(x), np.array(y),
+        self.model.main_network.fit(x, y,
                                     batch_size=self.settings.rl_behavior_settings.minibatch_size,
                                     verbose=0,
                                     shuffle=False)
@@ -271,7 +296,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return
 
     def reset(self, random_starting_pos=False):
-        print("====================================================================== Reset")
         # TODO: Implement random offset starting point
         # --> Reset Drone to starting position
         self.client.reset()
