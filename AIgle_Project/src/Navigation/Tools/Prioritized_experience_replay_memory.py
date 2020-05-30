@@ -34,6 +34,7 @@ class Prioritized_experience_replay_memory(object):
             self.memory = deque(maxlen=max_size)
             self.priorities = deque(maxlen=max_size)
             self.indexes = deque(maxlen=max_size)
+            self.current_index = -1
 
     @property
     def length(self):
@@ -45,7 +46,7 @@ class Prioritized_experience_replay_memory(object):
         self.priorities.append(1)
 
         ln = len(self.memory)
-        if ln < self.memory_size:
+        if ln <= self.memory_size:
             self.indexes.append(ln)
         return
 
@@ -56,9 +57,8 @@ class Prioritized_experience_replay_memory(object):
         return
 
     def sample(self, batch_size):
-        assert(len(self.memory) == len(self.priorities))
         # --> Sample memory according to priorities
-        # indices = weighted_choice(list(self.indexes), list(self.priorities), batch_size=batch_size)
+        assert(len(self.indexes) == len(self.priorities))
         indices = random.choices(self.indexes, weights=self.priorities, k=batch_size)
         minibatch = [self.memory[indx - 1] for indx in indices]
 

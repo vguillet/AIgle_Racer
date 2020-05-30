@@ -139,7 +139,7 @@ class RL_navigation:
             print("\n--> Episode complete")
 
             # TODO: add checkpoint rate in settings
-            if episode % 10 == 0:
+            if episode % 100 == 0:
                 plt.plot(ep_rewards)
                 plt.xlabel("Epoques")
                 plt.ylabel("Cumulated Reward")
