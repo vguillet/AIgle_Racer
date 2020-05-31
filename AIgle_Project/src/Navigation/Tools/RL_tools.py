@@ -27,11 +27,12 @@ class RL_tools:
         ml_tools = ML_tools()
 
         # ----- Throttle learning rate
-        # Throttle (decrease) learning rate according to episode
-        learning_rate = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
-                                          settings.rl_behavior_settings.learning_rate, 0.99, 0.1,
-                                          settings.rl_behavior_settings.learning_rate_decay,
-                                          inverse=True, start_from_setting_value=True)
+        # Throttle (decrease) tau according to episode
+        tau = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
+                                settings.rl_behavior_settings.tau, 0.1, 0.0001,
+                                settings.rl_behavior_settings.tau_decay,
+                                inverse=True, start_from_setting_value=True)
+
         # ----- Throttle discount
         # Throttle (increase) discount according to episode
         discount = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
@@ -46,4 +47,4 @@ class RL_tools:
                                     settings.rl_behavior_settings.epsilon_decay,
                                     inverse=True, start_from_setting_value=True)
 
-        return learning_rate, discount, epsilon
+        return tau, discount, epsilon

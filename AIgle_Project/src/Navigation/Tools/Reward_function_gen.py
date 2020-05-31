@@ -35,12 +35,12 @@ class Reward_function(object):
 
         if collision is True:
             # --> Negative reward if a collision occurred (not included for now)
-            # reward = -100
-            reward = -(math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2))
+            reward = -100
+            # reward = -(math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2))
 
         else:
-            if distance_from_goal < 1:
-                reward = 100
+            if distance_from_goal < 2:
+                reward = 200
 
             else:
                 reward = -(math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2))
@@ -63,7 +63,7 @@ class Reward_function(object):
             return True
 
         # --> Check x position
-        if distance_from_goal < 1:
+        if distance_from_goal < 2:
             return True
 
         return False

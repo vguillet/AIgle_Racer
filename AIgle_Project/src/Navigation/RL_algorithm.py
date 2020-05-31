@@ -64,6 +64,16 @@ class RL_navigation:
         # --> Episode rewards
         ep_rewards = []
 
+        # --> Episode parameters
+        ep_tau = []
+        ep_discount = []
+        ep_epsilon = []
+
+        # --> Episode batches
+        current_ep_batch_reward = []
+        ep_batch_reward = []
+
+        # --> Create episode progress bar
         episode_bar = Progress_bar(max_step=settings.rl_behavior_settings.episodes,
                                    overwrite_setting=False,
                                    label="Episodes")
@@ -81,26 +91,30 @@ class RL_navigation:
             episode_reward = 0
 
             # --> Reset agent/environment
-            agent.reset()
+            agent.reset(settings.agent_settings.random_starting_point)
 
             # --> Get initial state
             current_state = agent.observation
+            print("- Starting state:", current_state)
 
             # --> Reset flag and start iterating until episode ends
             done = False
 
             # ---- Compute new episode parameters
-            # TODO: Connect episode parameters
-            learning_rate, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
+            tau, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
 
+            # --> Record episode parameters
+            ep_tau.append(tau)
+            ep_discount.append(discount)
+            ep_epsilon.append(epsilon)
+
+            # --> Create step progress bar
             step_bar = Progress_bar(max_step=settings.agent_settings.max_step,
                                     # overwrite_setting=False,
                                     label="Steps")
             while not done:
                 # --> Get a random value
-                if random.randint(0, 100) > settings.rl_behavior_settings.epsilon:
-                # if np.random.randint(0, 100) > 0:
-
+                if random.randint(0, 100) > epsilon:
                     # --> Get best action from main model
                     action = np.argmax(agent.get_qs())
 
@@ -125,7 +139,7 @@ class RL_navigation:
 
                 # --> Update update replay memory and train models
                 client.simPause(True)
-                agent.train()
+                agent.train(discount, tau)
                 client.simPause(False)
 
                 # --> Set current state as new state
@@ -134,17 +148,44 @@ class RL_navigation:
                 if not done:
                     step_bar.update_progress()
 
-            ep_rewards.append(episode_reward)
-
             print("\n--> Episode complete")
+            # --> Record episode results
+            ep_rewards.append(episode_reward)
+            current_ep_batch_reward.append(episode_reward)
 
-            # TODO: add checkpoint rate in settings
-            if episode % 100 == 0:
-                plt.plot(ep_rewards)
-                plt.xlabel("Epoques")
-                plt.ylabel("Cumulated Reward")
+            if len(current_ep_batch_reward) == settings.rl_behavior_settings.batch_episode_size:
+                # --> Calculate last epoque batch average and add to ep_bacth_reward
+                avg_reward = sum(current_ep_batch_reward)/len(current_ep_batch_reward)
+                ep_batch_reward.append(avg_reward)
+
+                # --> Reset current_ep_batch_reward
+                current_ep_batch_reward = []
+
+                # --> Plot ep_bacth_reward
+                plt.plot(ep_batch_reward)
+                plt.xlabel("Epoques (batch size = " +
+                           str(settings.rl_behavior_settings.batch_episode_size) + ")")
+                plt.ylabel("Cumulated reward")
                 plt.grid()
                 plt.show()
+
+                # plt.plot(ep_tau)
+                # plt.xlabel("Epoques")
+                # plt.ylabel("Tau")
+                # plt.grid()
+                # plt.show()
+                #
+                # plt.plot(ep_discount)
+                # plt.xlabel("Epoques")
+                # plt.ylabel("Discount")
+                # plt.grid()
+                # plt.show()
+                #
+                # plt.plot(ep_epsilon)
+                # plt.xlabel("Epoques")
+                # plt.ylabel("Epsilon")
+                # plt.grid()
+                # plt.show()
 
             # if episode % 100 == 0:
             # --> Record networks

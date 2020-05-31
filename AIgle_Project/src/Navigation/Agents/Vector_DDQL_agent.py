@@ -204,7 +204,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         self.memory.remember(current_state, action, reward, next_state, done)
         return
 
-    def train(self):
+    def train(self, discount, tau):
         # TODO: Connect settings to epoque
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
@@ -236,7 +236,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             if not done:
                 # --> If not done, get new q from future states
                 max_future_q = np.max(next_qs_list[index])
-                new_q = reward + self.settings.rl_behavior_settings.discount * max_future_q
+                new_q = reward + discount * max_future_q
             else:
                 # --> If done, set new q equal reward
                 new_q = reward
@@ -261,14 +261,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
                               np.transpose(current_qs_list.max(axis=1)[np.newaxis]))
 
-            # print("\n\n")
-            # print(np.transpose(np.array([new_qs_lst])).shape)
-            # print(np.transpose(current_qs_list.max(axis=1)[np.newaxis]).shape)
-            # print(np.transpose(current_qs_list.max(axis=1)[np.newaxis]))
-            # print(td_error.shape)
-            # print(td_error)
-
-            # sys.exit()
             self.memory.update_priorities(indices, td_error)
 
         # --> Fit main model on all samples as one batch, log only on terminal state
@@ -284,11 +276,11 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
                                     verbose=0,
                                     shuffle=False)
 
-        self.model.soft_update_target(self.settings.rl_behavior_settings.tau)
+        self.model.soft_update_target(tau)
 
         if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
             # --> Update target network with weights of main network
-            # self.model.hard_update_target()
+            self.model.hard_update_target()
 
             # --> Reset target_update_counter
             self.target_update_counter = 0
@@ -301,12 +293,22 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         self.client.reset()
 
         # --> Restart simulation
-        self.client.simPause(False)
+        # self.client.simPause(False)
 
         # --> Enable API control and take off
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
+
         self.client.moveToPositionAsync(0, 0, -2, 3).join()
+
+        if random_starting_pos is True:
+            pose = self.client.simGetVehiclePose()
+
+            pose.position.x_val = random.randint(-10, 10)
+            # pose.position.y_val += random.randint(-2, 2)
+            pose.position.z_val = random.randint(-4, 4)
+
+            self.client.simSetVehiclePose(pose, True)
 
         # --> Reset agent properties
         self.age = 0

@@ -26,11 +26,10 @@ class RL_behavior_settings:
         # ---- Stats settings
         self.plot_best_agent_stats = True
 
-        # ---- Cycle settings
-        self.plot_best_agent_reward_timeline = False
-        self.plot_best_agent_inventory = True
+        # ---- Episode batch settings
+        self.batch_episode_size = 50
+        self.plot_episode_batch_reward = True
 
-        self.show_best_agent_visualiser = False
 
         # ___________________________ Main parameters ____________________________
         # ---- Agent ref
@@ -49,27 +48,27 @@ class RL_behavior_settings:
         self.min_replay_memory_size = 250
 
         # ---- Run settings
-        self.episodes = 20_000
+        self.episodes = 10_000
 
         # ---- Cycle settings
         self.cyclic_training = False
 
         # ---- Learning settings
-        self.learning_rate = 0.3        # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
+        # self.learning_rate = 0.3        # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
         self.discount = 0.75            #                   short-term reward 0 <-- x --> 1 long-term reward
 
         self.minibatch_size = 20
-        self.tau = 0.001                    # Rate at which target weights change
-        self.update_target_every = 10
+        self.tau = 0.001                # Rate at which target weights change
+        self.update_target_every = 100000000
 
         # ---- Exploration settings
-        self.epsilon = 25               # Probability (percent) of taking random action
+        self.epsilon = 35               # Probability (percent) of taking random action
         self.random_starting_pos = False
 
         # ---- Decay settings
         self.decay_functions = ["Fixed value", "Linear decay", "Exponential decay", "Logarithmic decay"]
 
-        self.learning_rate_decay = 1
+        self.tau_decay = 0
         self.discount_decay = 1
         self.epsilon_decay = 1
 
