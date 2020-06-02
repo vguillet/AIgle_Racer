@@ -22,6 +22,7 @@ from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 from AIgle_Project.src.Navigation.Agents.Image_DQL_agent import Image_DQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDQL_agent import Vector_DDQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
+from AIgle_Project.src.Navigation.Tools.RL_results import RL_results
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -44,6 +45,7 @@ class RL_navigation:
         # --> Initialise tools
         ml_tools = ML_tools()
         rl_tools = RL_tools()
+        results = RL_results()
 
         # --> Seed numpy
         random.seed(10)
@@ -61,34 +63,28 @@ class RL_navigation:
         #                    critic_ref=settings.rl_behavior_settings.critic_ref)
 
         # ---- Create trackers
-        # --> Episode rewards
-        ep_rewards = []
-
-        # --> Episode parameters
-        ep_tau = []
-        ep_discount = []
-        ep_epsilon = []
-
-        # --> Episode batches
+        # --> epoque batches
         current_ep_batch_reward = []
-        ep_batch_reward = []
+        batch_counter = 0
 
-        # --> Create episode progress bar
-        episode_bar = Progress_bar(max_step=settings.rl_behavior_settings.episodes,
-                                   overwrite_setting=False,
-                                   label="Episodes")
+        # --> Create epoque progress bar
+        epoque_bar = Progress_bar(max_step=settings.rl_behavior_settings.epoques,
+                                  overwrite_setting=False,
+                                  label="Epoques")
 
-        # --> Iterate over episodes
-        for episode in range(1, settings.rl_behavior_settings.episodes + 1):
-            print("\n=================== Episode", episode)
-            episode_bar.update_progress()
+        client.simFlushPersistentMarkers()
 
-            # TODO: Fix tensorboard
-            # agent.tensorboard.step = episode
+        # ======================== PROCESS ==============================================
+        # --> Iterate over epoques
+        for epoque in range(1, settings.rl_behavior_settings.epoques + 1):
+            epoque_bar.update_progress()
+
+            print("\n======================================= Epoque", epoque)
+            batch_counter += 1
 
             # ---- Reset
-            # --> Reset episode reward and step number
-            episode_reward = 0
+            # --> Reset epoque reward and step number
+            epoque_reward = 0
 
             # --> Reset agent/environment
             agent.reset(settings.agent_settings.random_starting_point)
@@ -97,16 +93,22 @@ class RL_navigation:
             current_state = agent.observation
             print("- Starting state:", current_state)
 
-            # --> Reset flag and start iterating until episode ends
+            # --> Reset flag and start iterating until epoque ends
             done = False
 
-            # ---- Compute new episode parameters
-            tau, discount, epsilon = rl_tools.get_episode_parameters(episode, settings)
+            # ---- Compute new epoque parameters
+            tau, discount, epsilon = rl_tools.get_epoque_parameters(epoque, settings)
 
-            # --> Record episode parameters
-            ep_tau.append(tau)
-            ep_discount.append(discount)
-            ep_epsilon.append(epsilon)
+            print("- epoque tau:", tau)
+            print("- epoque discount:", discount)
+            print("- epoque epsilon:", epsilon)
+
+            print("\n")
+
+            # --> Record epoque parameters
+            results.epoque_tau.append(tau)
+            results.epoque_discount.append(discount)
+            results.epoque_epsilon.append(epsilon)
 
             # --> Create step progress bar
             step_bar = Progress_bar(max_step=settings.agent_settings.max_step,
@@ -128,10 +130,10 @@ class RL_navigation:
                 new_state, reward, done = agent.step(action)
 
                 # --> Count reward
-                episode_reward += reward
+                epoque_reward += reward
 
                 # TODO: Setup render environment
-                # if SHOW_PREVIEW and not episode % AGGREGATE_STATS_EVERY:
+                # if SHOW_PREVIEW and not epoque % AGGREGATE_STATS_EVERY:
                 #     env.render()
 
                 # --> Add memory to replay memory
@@ -145,60 +147,63 @@ class RL_navigation:
                 # --> Set current state as new state
                 current_state = new_state
 
+                # --> Clean up trace marks
+                if settings.rl_behavior_settings.show_tracelines == "step":
+                    client.simFlushPersistentMarkers()
+
                 if not done:
                     step_bar.update_progress()
 
-            print("\n--> Episode complete")
-            # --> Record episode results
-            ep_rewards.append(episode_reward)
-            current_ep_batch_reward.append(episode_reward)
+            print("\n--> Epoque complete")
 
-            if len(current_ep_batch_reward) == settings.rl_behavior_settings.batch_episode_size:
+            # --> Record epoque results
+            results.epoque_reward.append(epoque_reward)
+            current_ep_batch_reward.append(epoque_reward)
+
+            # --> Clean up trace marks
+            if settings.rl_behavior_settings.show_tracelines == "individual":
+                client.simFlushPersistentMarkers()
+
+            # ----- Display batch results
+            if batch_counter == settings.rl_behavior_settings.batch_epoque_size:
+                # --> Clean up trace marks
+                if settings.rl_behavior_settings.show_tracelines == "batch":
+                    client.simFlushPersistentMarkers()
+
+                # --> Save models
+                if settings.rl_behavior_settings.save_model_on_batch:
+                    agent.model.save_checkpoint(epoque)
+
                 # --> Calculate last epoque batch average and add to ep_bacth_reward
                 avg_reward = sum(current_ep_batch_reward)/len(current_ep_batch_reward)
-                ep_batch_reward.append(avg_reward)
 
-                # --> Reset current_ep_batch_reward
+                results.avg_reward_per_batch.append(avg_reward)
+                results.best_individual_reward_per_batch.append(max(current_ep_batch_reward))
+
+                # --> Plot batch diagrams
+                results.plot_results()
+
+                # --> Reset batch trackers
                 current_ep_batch_reward = []
+                batch_counter = 0
 
-                # --> Plot ep_bacth_reward
-                plt.plot(ep_batch_reward)
-                plt.xlabel("Epoques (batch size = " +
-                           str(settings.rl_behavior_settings.batch_episode_size) + ")")
-                plt.ylabel("Cumulated reward")
-                plt.grid()
-                plt.show()
+        # ======================== RESULTS ==============================================
 
-                # plt.plot(ep_tau)
-                # plt.xlabel("Epoques")
-                # plt.ylabel("Tau")
-                # plt.grid()
-                # plt.show()
-                #
-                # plt.plot(ep_discount)
-                # plt.xlabel("Epoques")
-                # plt.ylabel("Discount")
-                # plt.grid()
-                # plt.show()
-                #
-                # plt.plot(ep_epsilon)
-                # plt.xlabel("Epoques")
-                # plt.ylabel("Epsilon")
-                # plt.grid()
-                # plt.show()
+        print("\n\n--RL optimisation process complete --")
+        results.gen_result_recap_file()
 
-            # if episode % 100 == 0:
+            # if epoque % 100 == 0:
             # --> Record networks
-            # agent.actor_model.save_checkpoint(str(episode))
-            # agent.critic_model.save_checkpoint(str(episode))
+            # agent.actor_model.save_checkpoint(str(epoque))
+            # agent.critic_model.save_checkpoint(str(epoque))
 
             # --> Record replay memory
-            # agent.memory.save_replay_memory(str(episode))
+            # agent.memory.save_replay_memory(str(epoque))
 
-            # print("\n", episode_reward)
-            # Append episode reward to a list and log stats (every given number of episodes)
-            # ep_rewards.append(episode_reward)
-            # if not episode % AGGREGATE_STATS_EVERY or episode == 1:
+            # print("\n", epoque_reward)
+            # Append epoque reward to a list and log stats (every given number of epoques)
+            # ep_rewards.append(epoque_reward)
+            # if not epoque % AGGREGATE_STATS_EVERY or epoque == 1:
             #     average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:]) / len(ep_rewards[-AGGREGATE_STATS_EVERY:])
             #     min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
             #     max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])

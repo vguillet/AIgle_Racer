@@ -30,7 +30,7 @@ class Reward_function(object):
                           }
         return
 
-    def get_reward(self, state, goal, collision, age):
+    def get_reward(self, state, goal, collision, age, max_age):
         distance_from_goal = math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2)
 
         if collision is True:

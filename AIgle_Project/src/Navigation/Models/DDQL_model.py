@@ -7,9 +7,11 @@
 # Built-in/Generic Imports
 import os
 import sys
+from datetime import datetime
 
 # Libs
 import tensorflow as tf
+from keras.models import load_model
 
 # Own modules
 
@@ -23,20 +25,22 @@ __date__ = '26/04/2020'
 class DDQL_model(object):
     def __init__(self, name,
                  input_dims, nb_actions,
-                 checkpoint_directory, model_ref=None):
+                 checkpoint_directory,
+                 model_ref=None):
 
         # --. Seed tensorflow
         tf.random.set_seed(10)
 
         # ---- Initiate model parameters
         self.name = name
+        self.type = "ddql"
         self.input_dims = input_dims
         self.nb_action = nb_actions
 
         self.params = tf.keras.Input(shape=(), dtype=tf.dtypes.float32)
 
         # --> Set checkpoint file directory
-        self.checkpoint_path = os.path.join(checkpoint_directory, self.name + "_ddpg")
+        self.checkpoint_path = checkpoint_directory
 
         if model_ref is None:
             # --> Create main model
@@ -77,10 +81,13 @@ class DDQL_model(object):
 
     def save_checkpoint(self, ref):
         print(".. saving checkpoint ...")
-        self.main_network.save(os.path.join(self.checkpoint_path, ref + ".h5"))
+        # self.target_network.save(os.path.join(self.checkpoint_path, self.type + "_" + str(ref) + datetime.now().strftime('_%Y-%m-%d_%H:%M:%S') + ".h5"))
+        print(self.checkpoint_path)
+        self.target_network.save(os.path.join(self.checkpoint_path, self.name + "_" + self.type + "_" + str(ref) + ".h5"))
+
         return
 
-    def load_checkpoint(self, model_ref):
+    def load_checkpoint(self, ref):
         print(".. loading checkpoint ...")
-        # TODO: Add load network
+        self.main_network = load_model(os.path.join(self.checkpoint_path, self.type + "_" + str(ref) + ".h5"))
         return

@@ -54,7 +54,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # ---- Setup agent properties
         # --> Setup model
-        self.model = Vector_DDQL_model("Actor",
+        self.model = Vector_DDQL_model("Vector",
                                        self.observation.shape,
                                        len(self.action_lst),
                                        model_ref=model_ref)
@@ -80,7 +80,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         self.action_history = []
         self.reward_history = []
 
-        # --> Episode trackers
+        # --> Epoque trackers
         self.observation_timeline = []
         self.action_timeline = []
         self.reward_timeline = []
@@ -184,7 +184,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         collision = self.check_final_state
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age)
+        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
         # --> Determine whether done or not
         done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
@@ -205,7 +205,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return
 
     def train(self, discount, tau):
-        # TODO: Connect settings to epoque
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
@@ -278,12 +277,13 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         self.model.soft_update_target(tau)
 
-        if self.target_update_counter > self.settings.rl_behavior_settings.update_target_every:
-            # --> Update target network with weights of main network
-            self.model.hard_update_target()
+        if self.settings.rl_behavior_settings.hard_update_target_every is not None:
+            if self.target_update_counter > self.settings.rl_behavior_settings.hard_update_target_every:
+                # --> Update target network with weights of main network
+                self.model.hard_update_target()
 
-            # --> Reset target_update_counter
-            self.target_update_counter = 0
+                # --> Reset target_update_counter
+                self.target_update_counter = 0
 
         return
 
@@ -313,7 +313,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Reset agent properties
         self.age = 0
 
-        # --> Record episode trackers to timeline trackers
+        # --> Record epoque trackers to timeline trackers
         self.observation_timeline += self.observation_history
         self.action_timeline += self.action_history
         self.reward_timeline += self.reward_history

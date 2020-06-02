@@ -28,6 +28,7 @@ __date__ = '26/04/2020'
 client = airsim.MultirotorClient()
 client.confirmConnection()
 client.simPause(False)
+# client.simFlushPersistentMarkers()
 
 # ---- Creation of various code components
 # --> Setup navigation

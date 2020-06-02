@@ -33,7 +33,8 @@ __date__ = '26/04/2020'
 class Vector_DDQL_model(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
-                 checkpoint_directory="Data/ddpg/actor", model_ref=None):
+                 checkpoint_directory="AIgle_Project/src/Navigation/Saved_models/Vector_ddpg/",
+                 model_ref=None):
         super().__init__(name, input_dims, nb_actions, checkpoint_directory, model_ref)
 
     def create_network(self):
