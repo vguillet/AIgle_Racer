@@ -4,7 +4,9 @@ This class contains the results_gen class, used to generate results form the var
 """
 
 # Built-in/Generic Imports
+import datetime
 import time
+import os
 
 # Own modules
 from AIgle_Project.Settings.SETTINGS import SETTINGS
@@ -23,11 +25,12 @@ class RL_results:
 
         # ---- Fetch EVOA settings
         self.settings = SETTINGS()
-        self.settings.rl_behavior_settings.gen_dql_settings()
+        self.settings.rl_behavior_settings.gen_ddql_settings()
 
         self.run_name = self.settings.rl_behavior_settings.run_name
 
-        self.run_start_time = None
+        # --> Run trackers
+        self.run_start_time = datetime.datetime.now()
         self.run_stop_time = None
 
         # --> Epoque trackers
@@ -38,7 +41,6 @@ class RL_results:
         self.epoque_tau = []
         self.epoque_discount = []
         self.epoque_epsilon = []
-
 
     def gen_stats(self):
         # ------------ Generating further informations
@@ -56,10 +58,14 @@ class RL_results:
 
     def gen_result_recap_file(self):
         # -- Create results file
-        training_type = self.settings.rl_behavior_settings.training_type
+        path = r"AIgle_Project/src/Navigation/Saved_models/Vector_ddql" \
+               + '/' + self.settings.rl_behavior_settings.training_type \
+               + "/" + self.run_name
 
-        path = r"AIgle_Project/src/Navigation/Saved_models/Vector_ddpg"
-        full_file_name = path + '/' + training_type + "/" + self.run_name + "/" + "Run_summary.txt"
+        full_file_name = path + "/" + "Run_summary.txt"
+
+        if not os.path.exists(path):
+            os.makedirs(path)
 
         self.results_file = open(full_file_name, "w+")
 
@@ -68,9 +74,9 @@ class RL_results:
 
         self.results_file.write("Run name: " + self.settings.rl_behavior_settings.run_name)
 
-        self.results_file.write("\n-----------> RL main parameters:" + "\n")
+        self.results_file.write("\n\n-----------> RL main parameters:" + "\n")
         self.results_file.write("Algorithm type: " + self.settings.rl_behavior_settings.algorithm)
-        self.results_file.write("Episode count: " + self.settings.rl_behavior_settings.episodes)
+        self.results_file.write("Epoque count: " + str(self.settings.rl_behavior_settings.epoques))
 
         if self.settings.rl_behavior_settings.model_ref is None:
             self.results_file.write("\nStarting model ref: None")
@@ -78,10 +84,10 @@ class RL_results:
         else:
             self.results_file.write("\nStarting model ref:" + self.settings.rl_behavior_settings.model_ref)
 
-        self.results_file.write("\n-----------> Replay memory parameters:" + "\n")
+        self.results_file.write("\n\n-----------> Replay memory parameters:" + "\n")
         self.results_file.write("Replay memory type:" + self.settings.rl_behavior_settings.memory_type)
-        self.results_file.write("Replay memory size:" + self.settings.rl_behavior_settings.memory_size)
-        self.results_file.write("Min replay memory type:" + self.settings.rl_behavior_settings.min_replay_memory_size)
+        self.results_file.write("Replay memory size:" + str(self.settings.rl_behavior_settings.memory_size))
+        self.results_file.write("Min replay memory type:" + str(self.settings.rl_behavior_settings.min_replay_memory_size))
 
         if self.settings.rl_behavior_settings.memory_ref is None:
             self.results_file.write("\nReplay memory ref: None")
@@ -89,23 +95,23 @@ class RL_results:
         else:
             self.results_file.write("\nReplay memory ref:" + self.settings.rl_behavior_settings.memory_ref)
 
-        self.results_file.write("\n-----------> Learning parameters:" + "\n")
-        self.results_file.write("Minibatch size =" + self.settings.rl_behavior_settings.minibatch_size)
-        self.results_file.write("Discount =" + self.settings.rl_behavior_settings.discount)
+        self.results_file.write("\n\n-----------> Learning parameters:" + "\n")
+        self.results_file.write("Minibatch size =" + str(self.settings.rl_behavior_settings.minibatch_size))
+        self.results_file.write("Discount =" + str(self.settings.rl_behavior_settings.discount))
 
-        self.results_file.write("\nTau =" + self.settings.rl_behavior_settings.tau)
+        self.results_file.write("\nTau =" + str(self.settings.rl_behavior_settings.tau))
 
-        if self.settings.rl_behavior_settings.hard_update_target_everyf is None:
+        if self.settings.rl_behavior_settings.hard_update_target_every is None:
             self.results_file.write("Hard update weights: Disabled")
 
         else:
-            self.results_file.write("Hard update weights:" + self.settings.rl_behavior_settings.hard_update_target_every)
+            self.results_file.write("Hard update weights every:" + str(self.settings.rl_behavior_settings.hard_update_target_every))
 
-        self.results_file.write("\n-----------> Exploration settings:" + "\n")
-        self.results_file.write("Epsilon =" + self.settings.rl_behavior_settings.epsilon)
+        self.results_file.write("\n\n-----------> Exploration settings:" + "\n")
+        self.results_file.write("Epsilon =" + str(self.settings.rl_behavior_settings.epsilon))
         self.results_file.write("Random starting position =" + str(self.settings.rl_behavior_settings.random_starting_pos))
 
-        self.results_file.write("\n-----------> Decay settings:" + "\n")
+        self.results_file.write("\n\n-----------> Decay settings:" + "\n")
         self.results_file.write(
             "Tau decay function: "
             + self.settings.rl_behavior_settings.decay_functions[self.settings.rl_behavior_settings.tau_decay])
@@ -118,19 +124,18 @@ class RL_results:
             "Epsilon decay function: "
             + self.settings.rl_behavior_settings.decay_functions[self.settings.rl_behavior_settings.epsilon_decay])
 
-        self.results_file.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+        self.results_file.write("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
         self.results_file.write("-----------> Run stats: \n")
         # self.results_file.write("Start time:" + self.run_start_time.strftime('%X %x %Z') + "\n")
         self.results_file.write("End time: " + time.strftime('%X %x %Z') + "\n")
-        self.results_file.write("Run time: " + str(round(self.run_stop_time - self.run_start_time, 3)) + "s\n")
+        self.results_file.write("Run time: " + str(self.run_stop_time - self.run_start_time) + "s\n")
 
         self.results_file.write("\nAverage computing time per epoque: "
                                 + str(
-            round((self.run_stop_time - self.run_start_time) / self.settings.rl_behavior_settings.epoques,
-                  3)) + "s\n")
+            (self.run_stop_time - self.run_start_time) / self.settings.rl_behavior_settings.epoques) + "s\n")
 
-        self.results_file.write("\n-----------> Rewards results:" + "\n")
+        self.results_file.write("\n\n-----------> Rewards results:" + "\n")
         self.results_file.write("Max average reward achieved: " + str(max(self.avg_reward_per_batch)) + "\n")
         self.results_file.write(
             "Max individual reward achieved: " + str(max(self.best_individual_reward_per_batch)) + "\n")
@@ -140,7 +145,7 @@ class RL_results:
         self.results_file.write(
             "Individual reward best fit line gradient achieved: " + str(self.gradient_bestfit_best_r) + "\n")
 
-        self.results_file.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+        self.results_file.write("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
         self.results_file.write("-----------> Validation benchmark results: \n")
 

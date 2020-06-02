@@ -41,7 +41,7 @@ class Image_DQL_agent(RL_agent_abc, Agent):
         super().__init__(client, name)
 
         # --> Setup rl settings
-        self.settings.rl_behavior_settings.gen_dql_settings()
+        self.settings.rl_behavior_settings.gen_ddql_settings()
 
         # --> Create custom tensorboard object
         # TODO: Fix tensorboard

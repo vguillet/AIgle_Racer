@@ -33,14 +33,12 @@ __date__ = '26/04/2020'
 class Vector_DDQL_model(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
-                 checkpoint_directory="AIgle_Project/src/Navigation/Saved_models/Vector_ddpg/",
+                 checkpoint_directory="AIgle_Project/src/Navigation/Saved_models/Vector_ddql/",
                  model_ref=None):
         super().__init__(name, input_dims, nb_actions, checkpoint_directory, model_ref)
 
     def create_network(self):
         # TODO: Review model
-
-        print("\n self.input_dims:", self.input_dims)
 
         X_input = Input(self.input_dims)
 
@@ -57,7 +55,7 @@ class Vector_DDQL_model(DDQL_model):
         # Output Layer with # of actions: 2 nodes (left, right)
         X = Dense(self.nb_action, activation="linear", kernel_initializer='he_uniform')(X)
 
-        model = Model(inputs=X_input, outputs=X, name='CartPole DQN model')
+        model = Model(inputs=X_input, outputs=X, name='AIgle Racer DDQN model')
         model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
         return model

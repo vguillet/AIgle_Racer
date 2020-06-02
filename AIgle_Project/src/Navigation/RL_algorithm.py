@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 import random
+import datetime
 
 # Libs
 import numpy as np
@@ -39,7 +40,7 @@ class RL_navigation:
         # --> Initialise settings
         settings = SETTINGS()
         settings.agent_settings.gen_agent_settings()
-        settings.rl_behavior_settings.gen_dql_settings()
+        settings.rl_behavior_settings.gen_ddql_settings()
         # settings.rl_behavior_settings.gen_ddpg_settings()
 
         # --> Initialise tools
@@ -67,6 +68,9 @@ class RL_navigation:
         current_ep_batch_reward = []
         batch_counter = 0
 
+        total_batch_steps = 0
+        batch_random_steps = 0
+
         # --> Create epoque progress bar
         epoque_bar = Progress_bar(max_step=settings.rl_behavior_settings.epoques,
                                   overwrite_setting=False,
@@ -79,18 +83,24 @@ class RL_navigation:
         for epoque in range(1, settings.rl_behavior_settings.epoques + 1):
             epoque_bar.update_progress()
 
-            print("\n======================================= Epoque", epoque)
+            print("\n\n================================================================================ Epoque", epoque)
             batch_counter += 1
 
             # ---- Reset
-            # --> Reset epoque reward and step number
+            # --> Reset epoque trackers
             epoque_reward = 0
+
+            total_epoque_steps = 0
+            epoque_optimal_steps = 0
+            epoque_random_steps = 0
 
             # --> Reset agent/environment
             agent.reset(settings.agent_settings.random_starting_point)
 
             # --> Get initial state
             current_state = agent.observation
+
+            print("\n--> Starting epoque")
             print("- Starting state:", current_state)
 
             # --> Reset flag and start iterating until epoque ends
@@ -103,7 +113,6 @@ class RL_navigation:
             print("- epoque discount:", discount)
             print("- epoque epsilon:", epsilon)
 
-            print("\n")
 
             # --> Record epoque parameters
             results.epoque_tau.append(tau)
@@ -111,20 +120,29 @@ class RL_navigation:
             results.epoque_epsilon.append(epsilon)
 
             # --> Create step progress bar
-            step_bar = Progress_bar(max_step=settings.agent_settings.max_step,
-                                    # overwrite_setting=False,
-                                    label="Steps")
+            # print("\n")
+            # step_bar = Progress_bar(max_step=settings.agent_settings.max_step,
+            #                         # overwrite_setting=False,
+            #                         bar_size=10,
+            #                         label="Steps")
             while not done:
+
+                total_epoque_steps += 1
+                total_batch_steps += 1
+
                 # --> Get a random value
-                if random.randint(0, 100) > epsilon:
+                if random.uniform(0, 100) > epsilon:
                     # --> Get best action from main model
                     action = np.argmax(agent.get_qs())
 
+                    epoque_optimal_steps += 1
+
                 else:
-                    # Get random action
+                    # --> Get random action
                     action = np.random.randint(0, len(agent.action_lst))
 
-                    # action + random.uniform(0, len(agent.action_lst))
+                    epoque_random_steps += 1
+                    batch_random_steps += 1
 
                 # --> Perform step using action
                 new_state, reward, done = agent.step(action)
@@ -151,10 +169,15 @@ class RL_navigation:
                 if settings.rl_behavior_settings.show_tracelines == "step":
                     client.simFlushPersistentMarkers()
 
-                if not done:
-                    step_bar.update_progress()
+                # if not done:
+                #     step_bar.update_progress()
 
-            print("\n--> Epoque complete")
+            print("\n\n--> Epoque complete")
+            print("- Total nb. steps taken:", total_epoque_steps)
+            print("- Nb. optimal steps taken:", epoque_optimal_steps)
+            print("- Nb. random steps taken:", epoque_random_steps)
+
+            print("\n")
 
             # --> Record epoque results
             results.epoque_reward.append(epoque_reward)
@@ -164,30 +187,46 @@ class RL_navigation:
             if settings.rl_behavior_settings.show_tracelines == "individual":
                 client.simFlushPersistentMarkers()
 
+            # ===========================================================================
             # ----- Display batch results
             if batch_counter == settings.rl_behavior_settings.batch_epoque_size:
                 # --> Clean up trace marks
                 if settings.rl_behavior_settings.show_tracelines == "batch":
                     client.simFlushPersistentMarkers()
 
-                # --> Save models
-                if settings.rl_behavior_settings.save_model_on_batch:
-                    agent.model.save_checkpoint(epoque)
-
                 # --> Calculate last epoque batch average and add to ep_bacth_reward
-                avg_reward = sum(current_ep_batch_reward)/len(current_ep_batch_reward)
+                avg_reward = round(sum(current_ep_batch_reward)/len(current_ep_batch_reward), 3)
 
                 results.avg_reward_per_batch.append(avg_reward)
                 results.best_individual_reward_per_batch.append(max(current_ep_batch_reward))
 
                 # --> Plot batch diagrams
-                results.plot_results()
+                if settings.rl_behavior_settings.plot_epoque_batch_reward:
+                    results.plot_results()
+
+                print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                print("- Batch results:")
+                print("Batch average reward:", avg_reward)
+                print("Batch max reward:", round(max(current_ep_batch_reward), 3))
+
+                print("Total nb. steps taken:", total_batch_steps)
+                print("Nb. random steps taken:", batch_random_steps)
+
+                # --> Save models
+                if settings.rl_behavior_settings.save_model_on_batch:
+                    agent.model.save_checkpoint(epoque)
+
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
                 # --> Reset batch trackers
                 current_ep_batch_reward = []
                 batch_counter = 0
 
+                random_steps = 0
+                steps = 0
+
         # ======================== RESULTS ==============================================
+        results.run_stop_time = datetime.datetime.now()
 
         print("\n\n--RL optimisation process complete --")
         results.gen_result_recap_file()

@@ -18,9 +18,9 @@ __date__ = '7/02/2020'
 
 
 class RL_behavior_settings:
-    def gen_dql_settings(self):
+    def gen_ddql_settings(self):
         # ---- General run settings
-        self.run_name = "Test_Run"
+        self.run_name = "Run_2"
         self.training_type = "Door"
         self.algorithm = "DDQL"
         # ___________________________ Print/plot parameters ______________________
@@ -41,11 +41,11 @@ class RL_behavior_settings:
         self.save_model_on_batch = True
 
         self.model_ref = None
+        # self.model_ref = "AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Door/Run_1/Vector_ddql_5000.h5"
 
         # ___________________________ Main parameters ____________________________
         # ---- Run settings
-        self.epoques = 5_000
-        self.model_ref = None
+        self.epoques = 10_000
 
         # ---- Stats settings
         # self.stats_sampling_rate = 100

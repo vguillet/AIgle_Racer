@@ -27,6 +27,6 @@ class Agent_settings:
 
         self.agent_min_speed = 3        # Min speed
         self.agent_max_speed = 3      # Max speed
-        self.max_step = 15
+        self.max_step = 10
 
         self.random_starting_point = True

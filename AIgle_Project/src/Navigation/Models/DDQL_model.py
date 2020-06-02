@@ -7,6 +7,7 @@
 # Built-in/Generic Imports
 import os
 import sys
+
 from datetime import datetime
 
 # Libs
@@ -14,6 +15,7 @@ import tensorflow as tf
 from keras.models import load_model
 
 # Own modules
+
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -28,7 +30,7 @@ class DDQL_model(object):
                  checkpoint_directory,
                  model_ref=None):
 
-        # --. Seed tensorflow
+        # --> Seed tensorflow
         tf.random.set_seed(10)
 
         # ---- Initiate model parameters
@@ -47,17 +49,13 @@ class DDQL_model(object):
             self.main_network = self.create_network()
             self.main_network.summary()
 
-            # --> Create target network
+            # --> Create target network and network weights equal to main model weights
             self.target_network = self.create_network()
-
-            # --> Set target network weights equal to main model weights
             self.target_network.set_weights(self.main_network.get_weights())
-        else:
-            # --> Load main model
-            self.main_network = self.load_checkpoint(model_ref)
 
-            # --> Load target network
-            self.target_network = self.load_checkpoint(model_ref)
+        else:
+            self.load_checkpoint(model_ref)
+            self.main_network.summary()
 
     def soft_update_target(self, tau):
         # --> Soft update using tau
@@ -80,14 +78,24 @@ class DDQL_model(object):
         sys.exit()
 
     def save_checkpoint(self, ref):
-        print(".. saving checkpoint ...")
-        # self.target_network.save(os.path.join(self.checkpoint_path, self.type + "_" + str(ref) + datetime.now().strftime('_%Y-%m-%d_%H:%M:%S') + ".h5"))
-        print(self.checkpoint_path)
+        print("\n... saving checkpoint ...\n")
+        if not os.path.exists(self.checkpoint_path):
+            os.makedirs(self.checkpoint_path)
+
         self.target_network.save(os.path.join(self.checkpoint_path, self.name + "_" + self.type + "_" + str(ref) + ".h5"))
 
         return
 
     def load_checkpoint(self, ref):
-        print(".. loading checkpoint ...")
-        self.main_network = load_model(os.path.join(self.checkpoint_path, self.type + "_" + str(ref) + ".h5"))
+        print("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("\n... loading checkpoint ...\n")
+
+        # --> Load main model
+        self.main_network = load_model(ref, compile=True)
+
+        # --> Load target network
+        self.target_network = load_model(ref, compile=True)
+
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
         return

@@ -42,7 +42,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         super().__init__(client, name)
 
         # --> Setup rl settings
-        self.settings.rl_behavior_settings.gen_dql_settings()
+        self.settings.rl_behavior_settings.gen_ddql_settings()
 
         # --> Create custom tensorboard object
         # TODO: Fix tensorboard
@@ -54,10 +54,15 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # ---- Setup agent properties
         # --> Setup model
+        checkpoint_path = "AIgle_Project/src/Navigation/Saved_models/Vector_ddql" \
+                          + '/' + self.settings.rl_behavior_settings.training_type \
+                          + "/" + self.settings.rl_behavior_settings.run_name
+
         self.model = Vector_DDQL_model("Vector",
                                        self.observation.shape,
                                        len(self.action_lst),
-                                       model_ref=model_ref)
+                                       model_ref=model_ref,
+                                       checkpoint_directory=checkpoint_path)
 
         # --> Setup memory
         if memory_type == "simple":
@@ -167,13 +172,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
                     round(current_state.kinematics_estimated.position.z_val + action[2], 1),
                     action[3]]
 
-        # --> Limiting top and low
-        # # TODO: Improve limits
-        if waypoint[2] < -6:
-            waypoint[2] = -6
-        elif waypoint[2] >= 3:
-            waypoint[2] = 3
-
         # print([round(current_state.kinematics_estimated.position.x_val, 1),
         #        round(current_state.kinematics_estimated.position.y_val, 1),
         #        round(current_state.kinematics_estimated.position.z_val, 1)])
@@ -182,6 +180,13 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         self.move(waypoint)
 
         collision = self.check_final_state
+
+        # --> Limiting top and low
+        # # TODO: Improve limits
+        if waypoint[2] < -6:
+            collision = True
+        elif waypoint[2] >= 3:
+            collision = True
 
         # --> Determine reward based on resulting state
         reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
