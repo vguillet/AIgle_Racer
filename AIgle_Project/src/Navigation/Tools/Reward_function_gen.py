@@ -35,18 +35,18 @@ class Reward_function(object):
 
         if collision is True:
             # --> Negative reward if a collision occurred (not included for now)
-            reward = -100
+            reward = -200
             # reward = -(math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2))
 
         else:
             if distance_from_goal < 2:
-                reward = 200
+                reward = 300
+
+            elif age >= max_age:
+                reward = -100
 
             else:
                 reward = -(math.sqrt((state[0])**2 + (state[1])**2 + (state[2])**2))
-                #  (math.sqrt((self.goal_dict[str(goal)]["x"])**2 +
-                #                     (self.goal_dict[str(goal)]["y"])**2 +
-                #                     (self.goal_dict[str(goal)]["z"])**2))
 
         return reward
 

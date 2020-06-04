@@ -40,28 +40,22 @@ class RL_navigation:
         # --> Initialise settings
         settings = SETTINGS()
         settings.agent_settings.gen_agent_settings()
+
         settings.rl_behavior_settings.gen_ddql_settings()
         # settings.rl_behavior_settings.gen_ddpg_settings()
 
         # --> Initialise tools
         ml_tools = ML_tools()
         rl_tools = RL_tools()
-        results = RL_results()
+        results = RL_results(settings)
 
         # --> Seed numpy
         random.seed(10)
 
         # ---- Create agent
-        agent = Vector_DDQL_agent(client, "1",
-                                  memory_type=settings.rl_behavior_settings.memory_type,
-                                  memory_ref=settings.rl_behavior_settings.memory_ref,
-                                  model_ref=settings.rl_behavior_settings.model_ref)
+        agent = Vector_DDQL_agent(client, "1")
 
-        # agent = DDPG_agent(client, "1",
-        #                    memory_type=settings.rl_behavior_settings.memory_type,
-        #                    memory_ref=settings.rl_behavior_settings.memory_ref,
-        #                    actor_ref=settings.rl_behavior_settings.actor_ref,
-        #                    critic_ref=settings.rl_behavior_settings.critic_ref)
+        # agent = DDPG_agent(client, "1")
 
         # ---- Create trackers
         # --> epoque batches
@@ -112,7 +106,6 @@ class RL_navigation:
             print("- epoque tau:", tau)
             print("- epoque discount:", discount)
             print("- epoque epsilon:", epsilon)
-
 
             # --> Record epoque parameters
             results.epoque_tau.append(tau)

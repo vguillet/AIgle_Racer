@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 import sys
+import random
 
 # Libs
 import numpy as np
@@ -35,10 +36,7 @@ __date__ = '26/04/2020'
 
 
 class Vector_DDPG_agent(RL_agent_abc, Agent):
-    def __init__(self, client, name, memory_type="simple",
-                 memory_ref=None,
-                 actor_ref=None,
-                 critic_ref=None):
+    def __init__(self, client, name):
 
         super().__init__(client, name)
 
@@ -57,25 +55,30 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         self.actor_model = Vector_Actor_DDQL_model("Actor",
                                                    len(self.observation),
                                                    len(self.action_lst),
-                                                   model_ref=actor_ref)
+                                                   model_ref=self.settings.rl_behavior_settings.actor_ref)
 
         self.critic_model = Vector_Critic_DDQL_model("Critic",
                                                      len(self.observation),
                                                      len(self.action_lst),
-                                                     model_ref=critic_ref)
+                                                     model_ref=self.settings.rl_behavior_settings.critic_ref)
 
         # --> Setup memory
-        if memory_type == "simple":
-            self.memory = Replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+        if self.settings.rl_behavior_settings.memory_type == "simple":
+            self.memory = Replay_memory(self.settings.rl_behavior_settings.memory_size,
+                                        self.settings.rl_behavior_settings.memory_ref)
 
-        elif memory_type == "prioritized":
-            self.memory = Prioritized_experience_replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+        elif self.settings.rl_behavior_settings.memory_type == "prioritized":
+            self.memory = Prioritized_experience_replay_memory(self.settings.rl_behavior_settings.memory_size,
+                                                               self.settings.rl_behavior_settings.memory_ref)
 
         else:
             print("!!!!! Invalid memory setting !!!!!")
             sys.exit()
 
         # ---- Setup trackers
+        # --> Used to count when to update target network with main network's weights
+        self.target_update_counter = 0
+
         # --> Step trackers
         self.observation_history = [self.observation]
         self.action_history = []
@@ -93,23 +96,22 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
     @property
     def observation(self):
         # --> Determine vector to next goal
-        x = self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val
-        y = self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val
-        z = self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val
+        x = round(self.reward_function.goal_dict[str(self.goal_tracker)]["x"] - self.state.kinematics_estimated.position.x_val, 1)
+        y = round(self.reward_function.goal_dict[str(self.goal_tracker)]["y"] - self.state.kinematics_estimated.position.y_val, 1)
+        z = round(self.reward_function.goal_dict[str(self.goal_tracker)]["z"] - self.state.kinematics_estimated.position.z_val, 1)
 
-        # --> Determine velocity vector magnitude ot next goal
-        linear_velocity_magnitude = (abs(self.state.kinematics_estimated.linear_velocity.x_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.y_val)
-                                     + abs(self.state.kinematics_estimated.linear_velocity.z_val)) / 3
+        # --> Determine velocity vector
+        u = round(self.state.kinematics_estimated.linear_velocity.x_val, 1)
+        v = round(self.state.kinematics_estimated.linear_velocity.y_val, 1)
+        w = round(self.state.kinematics_estimated.linear_velocity.z_val, 1)
 
-        return [x, y, z, linear_velocity_magnitude]
+        # return np.array([x, y, z, u, v, w])
+        return np.array([x, y, z])
 
     @property
     def action_lst(self):
         possible_moves = []
         possible_speeds = []
-
-        action_lst = []
 
         # --> List all possible positions combinations
         for dimension in range(3):
@@ -120,19 +122,42 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
 
         possible_moves = set(combinations(possible_moves, 3))
 
+        # --> Convert to lst of lst
+        possible_moves_lst = []
+        for moves in possible_moves:
+            possible_moves_lst.append(list(moves))
+
         # --> List all possible speeds
         for speed in range(self.settings.agent_settings.agent_min_speed,
                            self.settings.agent_settings.agent_max_speed + 1):
             possible_speeds.append(speed)
 
         # --> List all possible positions and speed combinations
-        action_lst = list(product(possible_moves, possible_speeds))
+        actions = list(product(possible_moves_lst, possible_speeds))
 
-        return action_lst
+        # TODO: Clean up
+        # --> Convert to lst of lst
+        action_lst = []
+        for action in actions:
+            action_lst.append(list(action))
+
+        flat_action_lst = []
+        # --> Flatten list
+        for action in action_lst:
+            item_lst = []
+            for item in action:
+                if type(item) is list:
+                    for subitem in item:
+                        item_lst.append(subitem)
+                else:
+                    item_lst.append(item)
+            flat_action_lst.append(item_lst)
+
+        return flat_action_lst
 
     def get_qs(self):
         # --> Queries actor main network for Q values given current observation
-        action = self.actor_model.main_network.predict(self.observation).ravel()[0]
+        action = self.actor_model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape))[0]
         noisy_action = action + self.noise()
         print(action)
         # TODO: Scale actions to match action space
@@ -141,37 +166,43 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         return action
 
     def step(self, action):
+        # --> Increase agent's age
+        self.age += 1
+
         # --> Determine action requested
         action = self.action_lst[action]
 
         # --> Determine target new state
-        current_state = self.observation
-        next_state = [[round(current_state[0][0] + action[0][0], 1),
-                      round(current_state[0][1] + action[0][1], 1),
-                      round(current_state[0][2] + action[0][2], 1)],
-                      action[1]]
+        current_state = self.state
 
-        # --> Limiting top and low
-        # TODO: Improve limits
-        if next_state[0][2] < -6:
-            next_state[0][2] = -6
-        elif next_state[0][2] >= 3.5:
-            next_state[0][2] = 3.5
+        waypoint = [round(current_state.kinematics_estimated.position.x_val + action[0], 1),
+                    round(current_state.kinematics_estimated.position.y_val + action[1], 1),
+                    round(current_state.kinematics_estimated.position.z_val + action[2], 1),
+                    action[3]]
+
+        # print([round(current_state.kinematics_estimated.position.x_val, 1),
+        #        round(current_state.kinematics_estimated.position.y_val, 1),
+        #        round(current_state.kinematics_estimated.position.z_val, 1)])
 
         # --> Move to target
-        self.move(next_state)
+        self.move(waypoint)
 
-        # --> Evaluate collision
         collision = self.check_final_state
 
+        # --> Limiting top and low
+        # # TODO: Improve limits
+        if waypoint[2] < -6:
+            collision = True
+        elif waypoint[2] >= 3:
+            collision = True
+
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age)
+        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age,
+                                                 self.settings.agent_settings.max_step)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
-
-        if not done:
-            self.age += 1
+        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age,
+                                                  self.settings.agent_settings.max_step)
 
         # --> Record step results
         self.observation_history.append(self.observation)
@@ -184,8 +215,7 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         self.memory.remember(current_state, action, reward, next_state, done)
         return
 
-    def train(self):
-        # TODO: Connect settings to epoque
+    def train(self, discount, tau):
         # --> Check whether memory contains enough experience
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
@@ -243,9 +273,9 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         actor_opt = Adam(self.settings.rl_behavior_settings.actor_learning_rate)
         actor_opt.apply_gradients(zip(da_dtheta, self.actor_model.main_network.trainable_variables))
 
-        # --> Update models targets
-        self.actor_model.soft_update_target(self.settings.rl_behavior_settings.tau)
-        self.critic_model.soft_update_target(self.settings.rl_behavior_settings.tau)
+        # --> Soft update models targets
+        self.actor_model.soft_update_target(tau)
+        self.critic_model.soft_update_target(tau)
         return
 
     def reset(self, random_starting_pos=False):
@@ -254,22 +284,35 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         self.client.reset()
 
         # --> Restart simulation
-        self.client.simPause(False)
+        # self.client.simPause(False)
 
         # --> Enable API control and take off
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
+
         self.client.moveToPositionAsync(0, 0, -2, 3).join()
+
+        if random_starting_pos is True:
+            pose = self.client.simGetVehiclePose()
+
+            pose.position.x_val = random.randint(-20, 20)
+            pose.position.y_val = random.randint(0, 6)
+            pose.position.z_val = random.randint(-4, 4)
+
+            self.client.simSetVehiclePose(pose, True)
 
         # --> Reset agent properties
         self.age = 0
 
-        # Record episode trackers to timeline trackers
+        # --> Record epoque trackers to timeline trackers
         self.observation_timeline += self.observation_history
         self.action_timeline += self.action_history
         self.reward_timeline += self.reward_history
 
-        # Reset step trackers
+        # --> Reset step trackers
         self.observation_history = [self.observation]
         self.action_history = []
         self.reward_history = []
+
+        # --> Update target network counter
+        self.target_update_counter += 1

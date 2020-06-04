@@ -21,12 +21,10 @@ __date__ = '10/09/2019'
 
 
 class RL_results:
-    def __init__(self):
+    def __init__(self, settings):
 
         # ---- Fetch EVOA settings
-        self.settings = SETTINGS()
-        self.settings.rl_behavior_settings.gen_ddql_settings()
-
+        self.settings = settings
         self.run_name = self.settings.rl_behavior_settings.run_name
 
         # --> Run trackers

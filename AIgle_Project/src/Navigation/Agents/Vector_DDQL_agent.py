@@ -35,9 +35,7 @@ __date__ = '26/04/2020'
 
 
 class Vector_DDQL_agent(RL_agent_abc, Agent):
-    def __init__(self, client, name, memory_type="simple",
-                 memory_ref=None,
-                 model_ref=None):
+    def __init__(self, client, name):
 
         super().__init__(client, name)
 
@@ -61,15 +59,17 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         self.model = Vector_DDQL_model("Vector",
                                        self.observation.shape,
                                        len(self.action_lst),
-                                       model_ref=model_ref,
+                                       model_ref=self.settings.rl_behavior_settings.model_ref,
                                        checkpoint_directory=checkpoint_path)
 
         # --> Setup memory
-        if memory_type == "simple":
-            self.memory = Replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+        if self.settings.rl_behavior_settings.memory_type == "simple":
+            self.memory = Replay_memory(self.settings.rl_behavior_settings.memory_size,
+                                        self.settings.rl_behavior_settings.memory_ref)
 
-        elif memory_type == "prioritized":
-            self.memory = Prioritized_experience_replay_memory(self.settings.rl_behavior_settings.memory_size, memory_ref)
+        elif self.settings.rl_behavior_settings.memory_type == "prioritized":
+            self.memory = Prioritized_experience_replay_memory(self.settings.rl_behavior_settings.memory_size,
+                                                               self.settings.rl_behavior_settings.memory_ref)
 
         else:
             print("!!!!! Invalid memory setting !!!!!")
@@ -77,7 +77,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # ---- Setup trackers
         # --> Used to count when to update target network with main network's weights
-        # TODO: Implemented blended hard/soft update
         self.target_update_counter = 0
 
         # --> Step trackers
@@ -161,6 +160,9 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return self.model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape))[0]
 
     def step(self, action):
+        # --> Increase agent's age
+        self.age += 1
+
         # --> Determine action requested
         action = self.action_lst[action]
 
@@ -194,9 +196,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Determine whether done or not
         done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
 
-        if not done:
-            self.age += 1
-
         # --> Record step results
         self.observation_history.append(self.observation)
         self.action_history.append(action)
@@ -216,17 +215,16 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
-        # minibatch = random.sample(self.memory.memory, self.settings.rl_behavior_settings.minibatch_size)
 
-        # --> Get current states from minibatch
-        current_states = np.array([transition[0] for transition in minibatch])
-        # --> Query main model for Q values
-        current_qs_list = self.model.main_network.predict(current_states)
+        # --> Get current states, action and next states from minibatch
+        batch_current_states = np.array([transition[0] for transition in minibatch])
+        batch_next_states = np.array([transition[3] for transition in minibatch])
 
-        # --> Get next states from minibatch
-        next_states = np.array([transition[3] for transition in minibatch])
-        # --> Query target model for Q values
-        next_qs_list = self.model.target_network.predict(next_states)
+        # --> Query main model for current states Q values
+        batch_current_qs_list = self.model.main_network.predict(batch_current_states)
+
+        # --> Query target model for next states Q values
+        batch_next_qs_list = self.model.target_network.predict(batch_next_states)
 
         # --> Creating new qs list
         new_qs_lst = []
@@ -239,14 +237,14 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         for index, (current_state, action, reward, next_state, done) in enumerate(minibatch):
             if not done:
                 # --> If not done, get new q from future states
-                max_future_q = np.max(next_qs_list[index])
+                max_future_q = np.max(batch_next_qs_list[index])
                 new_q = reward + discount * max_future_q
             else:
                 # --> If done, set new q equal reward
                 new_q = reward
 
             # --> Update Q value for given state
-            current_qs = current_qs_list[index]
+            current_qs = batch_current_qs_list[index]
             current_qs[action] = new_q
 
             # --> Append to new qs lst
@@ -260,10 +258,10 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         x = np.array(x)
         y = np.array(y)
 
-        # --> Update priorities
+        # --> Updating priorities if using Prioritized experience replay
         if isinstance(self.memory, Prioritized_experience_replay_memory):
             td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
-                              np.transpose(current_qs_list.max(axis=1)[np.newaxis]))
+                              np.transpose(batch_current_qs_list.max(axis=1)[np.newaxis]))
 
             self.memory.update_priorities(indices, td_error)
 
@@ -309,8 +307,8 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         if random_starting_pos is True:
             pose = self.client.simGetVehiclePose()
 
-            pose.position.x_val = random.randint(-10, 10)
-            # pose.position.y_val += random.randint(-2, 2)
+            pose.position.x_val = random.randint(-20, 20)
+            pose.position.y_val = random.randint(0, 6)
             pose.position.z_val = random.randint(-4, 4)
 
             self.client.simSetVehiclePose(pose, True)
