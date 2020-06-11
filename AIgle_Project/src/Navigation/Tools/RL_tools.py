@@ -29,7 +29,7 @@ class RL_tools:
         # ----- Throttle tau
         # Throttle (decrease) tau according to epoque
         tau = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques,
-                                settings.rl_behavior_settings.tau, 0.001, 0.0001,
+                                settings.rl_behavior_settings.tau, 0.001, 0.0008,
                                 settings.rl_behavior_settings.tau_decay,
                                 inverse=True, start_from_setting_value=True)
 
@@ -42,8 +42,8 @@ class RL_tools:
 
         # ----- Throttle epsilon
         # Throttle (decrease) epsilon according to epoque
-        epsilon = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques-2000,
-                                    settings.rl_behavior_settings.epsilon, 100, 1,
+        epsilon = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques-500,
+                                    settings.rl_behavior_settings.epsilon, 100, 5,
                                     settings.rl_behavior_settings.epsilon_decay,
                                     inverse=True, start_from_setting_value=True)
 

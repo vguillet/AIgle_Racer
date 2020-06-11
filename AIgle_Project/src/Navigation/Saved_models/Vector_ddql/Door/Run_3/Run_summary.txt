@@ -4,22 +4,30 @@
 Run name: Run_3
 
 -----------> RL main parameters:
-Algorithm type: DDQLEpoque count: 5000
+Algorithm type: DDQL
+Epoque count: 5000
 Starting model ref:AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Door/Run_2/Vector_ddql_7800.h5
 
 -----------> Replay memory parameters:
-Replay memory type:prioritizedReplay memory size:5000Min replay memory type:250
+Replay memory type: prioritized
+Replay memory size: 5000
+Min replay memory type: 250
 Replay memory ref: None
 
 -----------> Learning parameters:
-Minibatch size =32Discount =0.75
-Tau =0.0005Hard update weights: Disabled
+Minibatch size = 32
+Discount = 0.75
+Tau = 0.0005
+Hard update weights: Disabled
 
 -----------> Exploration settings:
-Epsilon =1Random starting position =False
+Epsilon = 1
+Random starting position = False
 
 -----------> Decay settings:
-Tau decay function: Linear decayDiscount decay function: Fixed valueEpsilon decay function: Fixed value
+Tau decay function: Linear decay
+Discount decay function: Fixed value
+Epsilon decay function: Fixed value
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -----------> Run stats: 

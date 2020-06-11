@@ -13,6 +13,7 @@ import numpy as np
 from keras.initializers import RandomUniform as RU
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Concatenate
+from keras.optimizers import Adam, RMSprop
 
 # Own modules
 from AIgle_Project.src.Navigation.Models.DDQL_model import DDQL_model
@@ -27,19 +28,20 @@ __date__ = '26/04/2020'
 class Vector_Critic_DDQL_model(DDQL_model):
     def __init__(self, name,
                  input_dims, nb_actions,
-                 checkpoint_directory="Data/ddpg/critic", model_ref=None):
+                 checkpoint_directory="Data/ddpg/critic",
+                 model_ref=None):
         super().__init__(name, input_dims, nb_actions, checkpoint_directory, model_ref)
 
     def create_network(self):
         # TODO: Review model
-        state = Input(shape=self.input_dims, name='state_input', dtype='float32')
+        state = Input(shape=self.input_dims)
         state_i = Dense(400,
                         activation='relu',
                         kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
                                               1 / np.sqrt(self.input_dims),
                                               1 / np.sqrt(self.input_dims)))(state)
 
-        action = Input(shape=(self.action_dims,), name='action_input')
+        action = Input(shape=self.nb_action)
 
         x = Concatenate([state_i, action])
 
@@ -48,7 +50,9 @@ class Vector_Critic_DDQL_model(DDQL_model):
                   kernel_initializer=RU(-1 / np.sqrt(401),
                                         1 / np.sqrt(401)))(x)
 
-        out = Dense(4, activation='linear')(x)
+        out = Dense(self.nb_action, activation='linear')(x)
 
-        model = Model(inputs=[state, action], outputs=out)
+        model = Model(inputs=[state, action], outputs=out, name='AIgle Racer DDPG critic model')
+        model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+
         return model

@@ -25,7 +25,8 @@ from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
 
 from AIgle_Project.src.Navigation.Tools.Tensor_board_gen import ModifiedTensorBoard
-from AIgle_Project.src.Navigation.Tools.Reward_function_gen import Reward_function
+from AIgle_Project.src.Navigation.Tools.Door_reward_function_gen import Door_reward_function
+from AIgle_Project.src.Navigation.Tools.Track_reward_function_gen import Track_reward_function
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'
@@ -47,7 +48,12 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # self.tensorboard = ModifiedTensorBoard(log_dir="logs/{}-{}".format("", int(time.time())))
 
         # --> Setup rewards
-        self.reward_function = Reward_function()
+        if self.settings.rl_behavior_settings.training_type == "Door":
+            self.reward_function = Door_reward_function()
+
+        elif self.settings.rl_behavior_settings.training_type == "Track":
+            self.reward_function = Track_reward_function()
+
         self.goal_tracker = 0
 
         # ---- Setup agent properties
@@ -120,6 +126,12 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
                 possible_moves.append(i)
                 possible_moves.append(-i)
 
+        # possible_moves = [0, 0, 0,
+        #                   1, -1, 1, -1, 1, -1,
+        #                   3, -3, 3, -3, 3, -3,
+        #                   5, -5, 5, -5, 5, -5,
+        #                   7, -7, 7, -7, 7, -7]
+
         possible_moves = set(combinations(possible_moves, 3))
 
         # --> Convert to lst of lst
@@ -191,10 +203,18 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             collision = True
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
+        reward = self.reward_function.get_reward(self.observation,
+                                                 self.goal_tracker,
+                                                 collision,
+                                                 self.age,
+                                                 self.settings.agent_settings.max_step)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age, self.settings.agent_settings.max_step)
+        done, self.goal_tracker, self.age = self.reward_function.check_if_done(self.observation,
+                                                                               self.goal_tracker,
+                                                                               collision,
+                                                                               self.age,
+                                                                               self.settings.agent_settings.max_step)
 
         # --> Record step results
         self.observation_history.append(self.observation)
@@ -204,7 +224,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return self.observation, reward, done
 
     def remember(self, current_state, action, reward, next_state, done):
-        # print(current_state, action, reward, next_state, done)
         self.memory.remember(current_state, action, reward, next_state, done)
         return
 
@@ -227,7 +246,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         batch_next_qs_list = self.model.target_network.predict(batch_next_states)
 
         # --> Creating new qs list
-        new_qs_lst = []
+        batch_next_qs_list = []
 
         # --> Creating feature set and target list
         x = []      # States
@@ -248,19 +267,19 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             current_qs[action] = new_q
 
             # --> Append to new qs lst
-            new_qs_lst.append(new_q)
+            batch_next_qs_list.append(new_q)
 
             # --> Append to training data
             x.append(current_state)
             y.append(current_qs)
 
-        # --> Turns lists to arrays
+        # --> Converting y to array
         x = np.array(x)
         y = np.array(y)
 
         # --> Updating priorities if using Prioritized experience replay
         if isinstance(self.memory, Prioritized_experience_replay_memory):
-            td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
+            td_error = np.abs(np.transpose(np.array([batch_next_qs_list])) -
                               np.transpose(batch_current_qs_list.max(axis=1)[np.newaxis]))
 
             self.memory.update_priorities(indices, td_error)
@@ -290,8 +309,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         return
 
-    def reset(self, random_starting_pos=False):
-        # TODO: Implement random offset starting point
+    def reset(self, random_starting_pos=False, random_flip_track=False):
         # --> Reset Drone to starting position
         self.client.reset()
 
@@ -307,11 +325,15 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         if random_starting_pos is True:
             pose = self.client.simGetVehiclePose()
 
-            pose.position.x_val = random.randint(-20, 20)
-            pose.position.y_val = random.randint(0, 6)
+            pose.position.x_val = random.randint(-10, 10)
+            pose.position.y_val = random.randint(-6, 6)
             pose.position.z_val = random.randint(-4, 4)
 
             self.client.simSetVehiclePose(pose, True)
+
+        if random_flip_track:
+            if bool(random.getrandbits(1)):
+                self.reward_function.flip_track()
 
         # --> Reset agent properties
         self.age = 0
@@ -328,5 +350,6 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
 
         # --> Update target network counter
         self.target_update_counter += 1
+        self.goal_tracker = 0
 
 

@@ -107,7 +107,7 @@ class RL_results:
 
         self.results_file.write("\n\n-----------> Exploration settings:" + "\n")
         self.results_file.write("Epsilon =" + str(self.settings.rl_behavior_settings.epsilon))
-        self.results_file.write("Random starting position =" + str(self.settings.rl_behavior_settings.random_starting_pos))
+        self.results_file.write("Random starting position =" + str(self.settings.agent_settings.random_starting_point))
 
         self.results_file.write("\n\n-----------> Decay settings:" + "\n")
         self.results_file.write(

@@ -25,7 +25,7 @@ from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
 
 from AIgle_Project.src.Navigation.Tools.Tensor_board_gen import ModifiedTensorBoard
-from AIgle_Project.src.Navigation.Tools.Reward_function_gen import Reward_function
+from AIgle_Project.src.Navigation.Tools.Door_reward_function_gen import Door_reward_function
 
 __version__ = '1.1.1'
 __author__ = 'Victor Guillet'

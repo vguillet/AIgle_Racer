@@ -19,13 +19,15 @@ import tensorflow as tf
 from AIgle_Project.src.Tools.Agent import Agent
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 
-from AIgle_Project.src.Navigation.Models.Vector_Actor_DDQL_model import Vector_Actor_DDQL_model
+from AIgle_Project.src.Navigation.Models.Vector_Actor_DDPG_model import Vector_Actor_DDPG_model
 from AIgle_Project.src.Navigation.Models.Vector_Critic_DDQL_model import Vector_Critic_DDQL_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
 
-from AIgle_Project.src.Navigation.Tools.Reward_function_gen import Reward_function
+from AIgle_Project.src.Navigation.Tools.Door_reward_function_gen import Door_reward_function
+from AIgle_Project.src.Navigation.Tools.Track_reward_function_gen import Track_reward_function
+
 from AIgle_Project.src.Navigation.Tools.OUAction_noise import OUAction_noise
 
 __version__ = '1.1.1'
@@ -47,20 +49,33 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         self.noise = OUAction_noise(mu=np.zeros(len(self.action_lst)))
 
         # --> Setup rewards
-        self.reward_function = Reward_function()
+        if self.settings.rl_behavior_settings.training_type == "Door":
+            self.reward_function = Door_reward_function()
+
+        elif self.settings.rl_behavior_settings.training_type == "Track":
+            self.reward_function = Track_reward_function()
+
         self.goal_tracker = 0
 
         # ---- Setup agent properties
         # --> Setup model
-        self.actor_model = Vector_Actor_DDQL_model("Actor",
-                                                   len(self.observation),
-                                                   len(self.action_lst),
-                                                   model_ref=self.settings.rl_behavior_settings.actor_ref)
+        checkpoint_path = "AIgle_Project/src/Navigation/Saved_models/Vector_ddpg" \
+                          + '/' + self.settings.rl_behavior_settings.training_type \
+                          + "/" + self.settings.rl_behavior_settings.run_name
 
+        print("------- Initiating actor")
+        self.actor_model = Vector_Actor_DDPG_model("Actor",
+                                                   self.observation.shape,
+                                                   len(self.action_lst),
+                                                   model_ref=self.settings.rl_behavior_settings.actor_ref,
+                                                   checkpoint_directory=checkpoint_path)
+
+        print("------- Initiating critic")
         self.critic_model = Vector_Critic_DDQL_model("Critic",
-                                                     len(self.observation),
+                                                     self.observation.shape,
                                                      len(self.action_lst),
-                                                     model_ref=self.settings.rl_behavior_settings.critic_ref)
+                                                     model_ref=self.settings.rl_behavior_settings.critic_ref,
+                                                     checkpoint_directory=checkpoint_path)
 
         # --> Setup memory
         if self.settings.rl_behavior_settings.memory_type == "simple":
@@ -161,8 +176,6 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         noisy_action = action + self.noise()
         print(action)
         # TODO: Scale actions to match action space
-        self.action_history.append(action)
-
         return action
 
     def step(self, action):
@@ -197,12 +210,18 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
             collision = True
 
         # --> Determine reward based on resulting state
-        reward = self.reward_function.get_reward(self.observation, self.goal_tracker, collision, self.age,
+        reward = self.reward_function.get_reward(self.observation,
+                                                 self.goal_tracker,
+                                                 collision,
+                                                 self.age,
                                                  self.settings.agent_settings.max_step)
 
         # --> Determine whether done or not
-        done = self.reward_function.check_if_done(self.observation, self.goal_tracker, collision, self.age,
-                                                  self.settings.agent_settings.max_step)
+        done, self.goal_tracker, self.age = self.reward_function.check_if_done(self.observation,
+                                                                               self.goal_tracker,
+                                                                               collision,
+                                                                               self.age,
+                                                                               self.settings.agent_settings.max_step)
 
         # --> Record step results
         self.observation_history.append(self.observation)
@@ -226,13 +245,13 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         # --> Get current states, action and next states from minibatch
         batch_current_states = np.array([transition[0] for transition in minibatch])
         batch_actions = np.array([transition[1] for transition in minibatch])
-        batch_next_states = np.array([transition[3] for transition in minibatch])
 
+        batch_next_states = np.array([transition[3] for transition in minibatch])
         # --> Get next actions using actor target network
-        next_actions = self.actor_model.target_network.predict(batch_current_states)
+        batch_next_actions = self.actor_model.target_network.predict(batch_current_states)
 
         # --> Gen Q value using critic target network
-        next_qs_list = self.critic_model.target_network.predict([batch_next_states, next_actions])
+        batch_next_qs_list = self.critic_model.target_network.predict([batch_next_states, batch_next_actions])
 
         # --> Creating feature set and target list
         y = []      # Resulting Q values
@@ -241,15 +260,16 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         for i, (current_state, action, reward, next_state, done) in enumerate(minibatch):
             if not done:
                 # --> If not done, get new q from reward and Q_next
-                y[i] = reward + next_qs_list[i] * self.settings.rl_behavior_settings.discount
+                y[i] = reward + batch_next_qs_list[i] * self.settings.rl_behavior_settings.discount
 
         # --> Converting y to array
         y = np.array(y)
 
         # --> Updating priorities if using Prioritized experience replay
-        if indices is not None:
-            td_error = np.abs(y - self.critic_model.main_network.predict([batch_current_states, batch_actions]))
-            self.memory.update_priorities(indices, td_error)
+        # if isinstance(self.memory, Prioritized_experience_replay_memory):
+            # if indices is not None:
+            #     td_error = np.abs(y - self.critic_model.main_network.predict([batch_current_states, batch_actions]))
+            #     self.memory.update_priorities(indices, td_error)
 
         # --> Training critics on batch
         self.critic_model.main_network.train_on_batch([batch_current_states, batch_actions], y)
@@ -278,8 +298,7 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         self.critic_model.soft_update_target(tau)
         return
 
-    def reset(self, random_starting_pos=False):
-        # TODO: Implement random offset starting point
+    def reset(self, random_starting_pos=False, random_flip_track=False):
         # --> Reset Drone to starting position
         self.client.reset()
 
@@ -295,11 +314,15 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         if random_starting_pos is True:
             pose = self.client.simGetVehiclePose()
 
-            pose.position.x_val = random.randint(-20, 20)
-            pose.position.y_val = random.randint(0, 6)
+            pose.position.x_val = random.randint(-10, 10)
+            pose.position.y_val = random.randint(-6, 6)
             pose.position.z_val = random.randint(-4, 4)
 
             self.client.simSetVehiclePose(pose, True)
+
+        if random_flip_track:
+            if bool(random.getrandbits(1)):
+                self.reward_function.flip_track()
 
         # --> Reset agent properties
         self.age = 0
@@ -316,3 +339,4 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
 
         # --> Update target network counter
         self.target_update_counter += 1
+        self.goal_tracker = 0

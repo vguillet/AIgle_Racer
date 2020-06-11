@@ -44,13 +44,17 @@ class Vector_DDQL_model(DDQL_model):
 
         # 'Dense' is the basic form of a neural network layer
         # Input Layer of state size and Hidden Layer with 512 nodes
-        X = Dense(512, input_shape=self.input_dims, activation="relu", kernel_initializer='he_uniform')(X_input)
+        X = Dense(8, input_shape=self.input_dims, activation="relu", kernel_initializer='he_uniform')(X_input)
+
+        X = Dense(16, activation="relu", kernel_initializer='he_uniform')(X)
 
         # Hidden layer with 256 nodes
-        X = Dense(256, activation="relu", kernel_initializer='he_uniform')(X)
+        X = Dense(24, activation="relu", kernel_initializer='he_uniform')(X)
+
+        X = Dense(24, activation="relu", kernel_initializer='he_uniform')(X)
 
         # Hidden layer with 64 nodes
-        X = Dense(128, activation="relu", kernel_initializer='he_uniform')(X)
+        X = Dense(32, activation="relu", kernel_initializer='he_uniform')(X)
 
         # Output Layer with # of actions
         X = Dense(self.nb_action, activation="linear", kernel_initializer='he_uniform')(X)

@@ -48,11 +48,24 @@ class Agent(object):
         self.client.simPause(False)
 
         # --> Move drone to specified position
+        # self.client.moveToPositionAsync(new_state[0],   # x
+        #                                 new_state[1],   # y
+        #                                 new_state[2],   # z
+        #                                 new_state[3]
+        #                                 ).join()
+
         self.client.moveToPositionAsync(new_state[0],   # x
                                         new_state[1],   # y
                                         new_state[2],   # z
-                                        new_state[3]
+                                        3
                                         ).join()
+
+        # self.client.moveOnPathAsync([airsim.Vector3r(new_state[0],
+        #                                              new_state[1],
+        #                                              new_state[2])],
+        #                             3, 150,
+        #                             airsim.DrivetrainType.ForwardOnly,
+        #                             airsim.YawMode(False, 0), 20, 1).join()
 
         # --> Pause simulation
         self.client.simPause(True)
