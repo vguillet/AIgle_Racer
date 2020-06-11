@@ -21,7 +21,7 @@ class RL_behavior_settings:
     run_mode = 0
     def gen_ddql_settings(self):
         # ---- General run settings
-        self.run_name = "Run_10"
+        self.run_name = "Run_11"
         self.training_type = "Track"
         self.algorithm = "DDQL"
         # ___________________________ Print/plot parameters ______________________
@@ -41,12 +41,12 @@ class RL_behavior_settings:
         # ---- Progress management
         self.save_model_on_batch = True
 
-        # self.model_ref = None
-        self.model_ref = "AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Track/Run_9/Vector_ddql_10000.h5"
+        self.model_ref = None
+        # self.model_ref = "AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Track/Run_9/Vector_ddql_10000.h5"
 
         # ___________________________ Main parameters ____________________________
         # ---- Run settings
-        self.epoques = 20_000
+        self.epoques = 5_000
 
         # ---- Stats settings
         # self.stats_sampling_rate = 100
@@ -63,13 +63,13 @@ class RL_behavior_settings:
 
         # ---- Learning settings
         # self.learning_rate = 0.3      # learn nothing (privilege long term) 0 <-- x --> 1 only consider recent info
-        self.discount = 0.75            #       75            short-term reward 0 <-- x --> 1 long-term reward
+        self.discount = 0.75            #  gamma     75            short-term reward 0 <-- x --> 1 long-term reward
         self.tau = 0.001                # Rate at which target weights change
 
         self.hard_update_target_every = None
 
         # ---- Exploration settings
-        self.epsilon = 10               # Probability (percent) of taking random action
+        self.epsilon = 15               # Probability (percent) of taking random action
 
         # ---- Decay settings
         self.decay_functions = ["Fixed value", "Linear decay", "Exponential decay", "Logarithmic decay"]
@@ -107,7 +107,7 @@ class RL_behavior_settings:
 
         # ___________________________ Main parameters ____________________________
         # ---- Run settings
-        self.epoques = 2_000
+        self.epoques = 5_000
 
         # ---- Stats settings
         # self.stats_sampling_rate = 100
@@ -136,7 +136,7 @@ class RL_behavior_settings:
         # ---- Decay settings
         self.decay_functions = ["Fixed value", "Linear decay", "Exponential decay", "Logarithmic decay"]
 
-        self.tau_decay = 1
+        self.tau_decay = 0
         self.discount_decay = 0
         self.epsilon_decay = 1
 

@@ -235,18 +235,16 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
 
-        # --> Get current states, action and next states from minibatch
+        # --> Get current states, action (from minibatch) and Qs (using main network)
         batch_current_states = np.array([transition[0] for transition in minibatch])
-        batch_next_states = np.array([transition[3] for transition in minibatch])
-
-        # --> Query main model for current states Q values
         batch_current_qs_list = self.model.main_network.predict(batch_current_states)
 
-        # --> Query target model for next states Q values
+        # --> Get next states (from minibatch), and Qs (using target network)
+        batch_next_states = np.array([transition[3] for transition in minibatch])
         batch_next_qs_list = self.model.target_network.predict(batch_next_states)
 
         # --> Creating new qs list
-        batch_next_qs_list = []
+        new_qs_lst = []
 
         # --> Creating feature set and target list
         x = []      # States
@@ -267,19 +265,19 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
             current_qs[action] = new_q
 
             # --> Append to new qs lst
-            batch_next_qs_list.append(new_q)
+            new_qs_lst.append(new_q)
 
             # --> Append to training data
             x.append(current_state)
             y.append(current_qs)
 
-        # --> Converting y to array
+        # --> Turns lists to arrays
         x = np.array(x)
         y = np.array(y)
 
         # --> Updating priorities if using Prioritized experience replay
         if isinstance(self.memory, Prioritized_experience_replay_memory):
-            td_error = np.abs(np.transpose(np.array([batch_next_qs_list])) -
+            td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
                               np.transpose(batch_current_qs_list.max(axis=1)[np.newaxis]))
 
             self.memory.update_priorities(indices, td_error)
@@ -310,6 +308,7 @@ class Vector_DDQL_agent(RL_agent_abc, Agent):
         return
 
     def reset(self, random_starting_pos=False, random_flip_track=False):
+        # TODO: Implement random offset starting point
         # --> Reset Drone to starting position
         self.client.reset()
 

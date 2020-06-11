@@ -23,6 +23,7 @@ __date__ = '26/04/2020'
 
 class Door_reward_function(object):
     def __init__(self):
+        self.direction = 1
         self.goal_dict = {"0": {"x": 0,
                                 "y": -28.5,
                                 "z": -2,
@@ -97,3 +98,71 @@ class Door_reward_function(object):
             return True, goal, age
 
         return False, goal, age
+
+    def flip_track(self):
+        if self.direction == 2:
+            self.goal_dict = {"0": {"x": 0,
+                                    "y": -28.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "1": {"x": -6,
+                                    "y": -53.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "2": {"x": -54,
+                                    "y": -57.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "3": {"x": -65,
+                                    "y": -14.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "4": {"x": -53.5,
+                                    "y": 28.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "5": {"x": -12,
+                                    "y": 32.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "6": {"x": 0,
+                                    "y": 0,
+                                    "z": -2,
+                                    "turn": 0},
+                              }
+            self.direction = 1
+
+        else:
+            self.goal_dict = {"6": {"x": 0,
+                                    "y": 0,
+                                    "z": -2,
+                                    "turn": 0},
+                              "5": {"x": 0,
+                                    "y": -28.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "4": {"x": -6,
+                                    "y": -53.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "3": {"x": -54,
+                                    "y": -57.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "2": {"x": -65,
+                                    "y": -14.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "1": {"x": -53.5,
+                                    "y": 28.5,
+                                    "z": -2,
+                                    "turn": 0},
+                              "0": {"x": -12,
+                                    "y": 32.5,
+                                    "z": -2,
+                                    "turn": 0},
+
+                              }
+            self.direction = 2
+
+        return

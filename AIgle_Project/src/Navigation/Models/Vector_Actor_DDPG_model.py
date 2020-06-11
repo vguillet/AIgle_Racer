@@ -40,19 +40,19 @@ class Vector_Actor_DDPG_model(DDQL_model):
     def create_network(self):
         # TODO: Review model
 
-        observation = Input(shape=self.input_dims)
+        x_input = Input(shape=self.input_dims)
         x = Dense(400, activation='relu',
                   kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
-                                        1 / np.sqrt(self.input_dims)))(observation)
+                                        1 / np.sqrt(self.input_dims)))(x_input)
 
         x = Dense(300, activation='relu',
                   kernel_initializer=RU(-1 / np.sqrt(400), 1 / np.sqrt(400)))(x)
 
-        out = Dense(self.nb_action,
-                    activation='tanh',
-                    kernel_initializer=RU(-0.003, 0.003))(x)
+        x = Dense(self.nb_action,
+                  activation='tanh',
+                  kernel_initializer=RU(-0.003, 0.003))(x)
 
-        model = Model(inputs=observation, outputs=out, name='AIgle Racer DDPG actor model')
-        model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+        model = Model(inputs=x_input, outputs=x, name='AIgle_Racer_DDPG_actor_model')
+        # model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
         return model
