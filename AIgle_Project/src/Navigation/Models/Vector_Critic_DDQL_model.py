@@ -10,10 +10,10 @@ import os
 # Libs
 import numpy as np
 
-from keras.initializers import RandomUniform as RU
-from keras.models import Sequential, Model
-from keras.layers import Dense, Input, concatenate
-from keras.optimizers import Adam, RMSprop
+from tensorflow.keras.initializers import RandomUniform as RU
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Input, Concatenate
+from tensorflow.keras.optimizers import Adam, RMSprop
 
 # Own modules
 from AIgle_Project.src.Navigation.Models.DDQL_model import DDQL_model
@@ -34,24 +34,32 @@ class Vector_Critic_DDQL_model(DDQL_model):
 
     def create_network(self):
         # TODO: Review model
-        state = Input(shape=self.input_dims, name='state_input')
-        state_i = Dense(400,
-                        activation='relu',
-                        kernel_initializer=RU(-1 / np.sqrt(self.input_dims),
-                                              1 / np.sqrt(self.input_dims),
-                                              1 / np.sqrt(self.input_dims)))(state)
+        # --> Setup input
+        input = [Input(shape=self.input_dims),
+                 Input(shape=(self.nb_action,))]
 
-        action = Input(shape=(self.nb_action,), name='action_input')
+        concat = Concatenate(axis=-1)(input)
 
-        x = concatenate([state_i, action])
+        # --> Setup network hidden structure
+        x = Dense(48, activation='relu')(concat)
+        x = Dense(24, activation='relu')(x)
 
-        x = Dense(300,
-                  activation='relu',
-                  kernel_initializer=RU(-1 / np.sqrt(401),
-                                        1 / np.sqrt(401)))(x)
+        # --> Setup output
+        output = Dense(1)(x)
 
-        x = Dense(self.nb_action, activation='linear')(x)
-
-        model = Model(inputs=[state, action], outputs=x, name='AIgle_Racer_DDPG_critic_model')
+        # --> Build model
+        model = Model(inputs=input, outputs=output, name='AIgle_Racer_DDPG_critic_model')
         model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+
         return model
+
+
+        # inputs = [Input(shape=state_shape), Input(shape=(action_dim,))]
+        # concat = Concatenate(axis=-1)(inputs)
+        # x = Dense(units[0], name="L0", activation='relu')(concat)
+        # for index in range(1, len(units)):
+        #     x = Dense(units[index], name="L{}".format(index), activation='relu')(x)
+        # output = Dense(1, name="Out")(x)
+        # model = Model(inputs=inputs, outputs=output)
+        #
+        # return model

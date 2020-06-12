@@ -22,7 +22,8 @@ from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 
 from AIgle_Project.src.Navigation.Agents.Image_DQL_agent import Image_DQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDQL_agent import Vector_DDQL_agent
-from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
+# from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
+
 from AIgle_Project.src.Navigation.Tools.RL_results import RL_results
 
 __version__ = '1.1.1'
@@ -125,10 +126,11 @@ class RL_navigation:
                     total_batch_steps += 1
 
                     # --> Get a random value
+                    actions = agent.get_qs()
+
                     if random.uniform(0, 100) > epsilon:
                         # --> Get best action from main model
-                        action = np.argmax(agent.get_qs())
-
+                        action = np.argmax(actions)
                         epoque_optimal_steps += 1
 
                     else:
@@ -149,7 +151,18 @@ class RL_navigation:
                     #     env.render()
 
                     # --> Add memory to replay memory
-                    agent.remember(current_state, action, reward, new_state, done)
+                    if isinstance(agent, Vector_DDQL_agent):
+                        agent.remember(current_state,
+                                       action,
+                                       reward,
+                                       new_state,
+                                       done)
+                    elif isinstance(agent, Vector_DDPG_agent):
+                        agent.remember(current_state,
+                                       np.squeeze(actions),
+                                       reward,
+                                       new_state,
+                                       done)
 
                     # --> Update update replay memory and train models
                     client.simPause(True)

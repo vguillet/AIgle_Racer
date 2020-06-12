@@ -12,11 +12,11 @@ from datetime import datetime
 
 # Libs
 import tensorflow as tf
-from keras.models import load_model
-from keras.utils import plot_model
-from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Concatenate
-from keras.optimizers import Adam, RMSprop
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Input, Concatenate
+from tensorflow.keras.optimizers import Adam, RMSprop
 
 # Own modules
 

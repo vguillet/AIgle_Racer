@@ -170,12 +170,15 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
 
         return flat_action_lst
 
-    def get_qs(self):
+    def get_qs(self, add_noise=False):
         # --> Queries actor main network for Q values given current observation
-        action = self.actor_model.main_network.predict(np.array(self.observation).reshape(-1, *self.observation.shape))[0]
-        noisy_action = action + self.noise()
-        # TODO: Scale actions to match action space
-        return action
+        state = np.expand_dims(self.observation, axis=0).astype(np.float32)
+        actions_qs = self.actor_model.main_network.predict(state)
+
+        # --> Add noise to result
+        actions_qs += self.noise() * add_noise
+
+        return actions_qs
 
     def step(self, action):
         # --> Increase agent's age
@@ -238,99 +241,49 @@ class Vector_DDPG_agent(RL_agent_abc, Agent):
         if self.memory.length < self.settings.rl_behavior_settings.min_replay_memory_size:
             return
 
-        print("!!!!!!!!!!!!!!!!!!!!!! Training !!!!!!!!!!!!!!!!!!!!!!")
-
         # --> Randomly sample minibatch from the memory
         minibatch, indices = self.memory.sample(self.settings.rl_behavior_settings.minibatch_size)
 
         # --> Get current states, action (from minibatch) and Qs (using critic main network)
-        batch_current_states = np.array([transition[0].astype('float32') for transition in minibatch])
-        batch_current_actions = self.actor_model.main_network.predict(batch_current_states)
-        batch_current_qs_list = self.critic_model.main_network.predict([batch_current_states, batch_current_actions])
+        batch_current_states = np.array([transition[0] for transition in minibatch])
+        batch_current_actions = np.array([transition[1] for transition in minibatch])
+        # batch_current_qs_list = self.critic_model.main_network.predict([batch_current_states, batch_current_actions])
+
+        batch_rewards = np.array([transition[2] for transition in minibatch])
+        batch_dones = np.array([transition[4] for transition in minibatch])
 
         # --> Get next states (from minibatch), action (using actor target network) and Qs (using critic target network)
-        batch_next_states = np.array([transition[3].astype('float32') for transition in minibatch])
+        batch_next_states = np.array([transition[3] for transition in minibatch])
         batch_next_actions = self.actor_model.target_network.predict(batch_next_states)
-        batch_next_qs_list = self.critic_model.target_network.predict([batch_next_states, batch_next_actions])
+        batch_next_qs = self.critic_model.target_network.predict([batch_next_states, batch_next_actions])
 
-        # --> Creating new qs list
-        new_qs_lst = []
+        # --> Get batch target qs
+        batch_target_qs = batch_rewards + batch_next_qs * discount * (1. - batch_dones)
 
-        # --> Creating feature set and target list
-        y = []      # Resulting Q values
-
-        # --> Enumerating the batches (tuple is content of minibatch)
-        for index, (current_state, action, reward, next_state, done) in enumerate(minibatch):
-            if not done:
-                # --> If not done, get new q from reward and Q_next
-                max_future_q = np.max(batch_next_qs_list[index])
-                new_q = reward + discount * max_future_q
-
-            else:
-                # --> If done, set new q equal reward
-                new_q = reward
-
-            # --> Update Q value for given state
-            current_qs = batch_current_qs_list[index]
-            current_qs[action] = new_q
-
-            # --> Append to new qs lst
-            new_qs_lst.append(new_q)
-
-            # --> Append to training data
-            y.append(current_qs)
-
-        # --> Turns lists to arrays
-        y = np.array(y)
-
-        # --> Updating priorities if using Prioritized experience replay
-        if isinstance(self.memory, Prioritized_experience_replay_memory):
-            td_error = np.abs(np.transpose(np.array([new_qs_lst])) -
-                              np.transpose(batch_current_qs_list.max(axis=1)[np.newaxis]))
-
-            self.memory.update_priorities(indices, td_error)
-
-        # --> Training critic on batch
-        self.critic_model.main_network.train_on_batch([batch_current_states, batch_current_actions], y)
-
-        # train critic
+        # --> Train critic main network
         with tf.GradientTape() as tape:
-            q_values = self.critic_model.main_network.predict([batch_current_states, batch_current_actions])
-            td_error = q_values - target_qs
-            critic_loss = tf.reduce_mean(ISWeights * tf.math.square(td_error))
+            q_values = self.critic_model.main_network([batch_current_states, batch_current_actions])
 
-        critic_grad = tape.gradient(critic_loss, self.critic.trainable_variables)  # compute critic gradient
-        self.critic_optimizer.apply_gradients(zip(critic_grad, self.critic.trainable_variables))
+            td_error = q_values - batch_target_qs
+            critic_loss = tf.reduce_mean(indices * tf.math.square(td_error))
 
-        # train actor
+        critic_grad = tape.gradient(critic_loss, self.critic_model.main_network.trainable_variables)  # Compute critic gradient
+        critic_optimiser = Adam(self.settings.rl_behavior_settings.critic_learning_rate)
+        critic_optimiser.apply_gradients(zip(critic_grad, self.critic_model.main_network.trainable_variables))
+
+        # --> Update priorities
+        if isinstance(self.memory, Prioritized_experience_replay_memory):
+            abs_errors = tf.reduce_sum(tf.abs(td_error), axis=1)
+            self.memory.update_priorities(indices, abs_errors)
+
+        # --> Train train actor main network
         with tf.GradientTape() as tape:
             actions = self.actor_model.main_network(batch_current_states)
             actor_loss = -tf.reduce_mean(self.critic_model.main_network([batch_current_states, actions]))
 
-        actor_grad = tape.gradient(actor_loss, self.actor_model.main_network.trainable_variables)  # compute actor gradient
+        actor_grad = tape.gradient(actor_loss, self.actor_model.main_network.trainable_variables)  # Compute actor gradient
         actor_optimiser = Adam(self.settings.rl_behavior_settings.actor_learning_rate)
         actor_optimiser.apply_gradients(zip(actor_grad, self.actor_model.main_network.trainable_variables))
-
-        # # --> Determining gradient difference
-        # # batch_current_states = tf.convert_to_tensor(batch_current_states)
-        # with tf.GradientTape() as tape:
-        #     a = self.actor_model.main_network(batch_current_states)
-        #     tape.watch(a)
-        #     q = self.critic_model.main_network([batch_current_states, a])
-        #
-        # # --> Getting the gradient of a and q
-        # dq_da = tape.gradient(q, a)
-        #
-        # with tf.GradientTape() as tape:
-        #     a = self.actor_model.main_network(batch_current_states)
-        #     tape.watch(a)
-        #     theta = self.actor_model.main_network.trainable_variables
-        #
-        # # --> Getting the gradient of a and theta
-        # da_dtheta = tape.gradient(a, theta, output_gradients=-dq_da)
-        #
-        # actor_opt = Adam(self.settings.rl_behavior_settings.actor_learning_rate)
-        # actor_opt.apply_gradients(zip(da_dtheta, self.actor_model.main_network.trainable_variables))
 
         # --> Soft update models targets
         self.actor_model.soft_update_target(tau)
