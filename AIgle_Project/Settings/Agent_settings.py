@@ -29,5 +29,5 @@ class Agent_settings:
         self.agent_max_speed = 3      # Max speed
         self.max_step = 17
 
-        self.random_starting_point = True
-        self.random_flip_track = True
+        self.random_starting_point = False
+        self.random_flip_track = False

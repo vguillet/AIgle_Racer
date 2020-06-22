@@ -22,7 +22,7 @@ from AIgle_Project.src.Navigation.Tools.RL_tools import RL_tools
 
 from AIgle_Project.src.Navigation.Agents.Image_DQL_agent import Image_DQL_agent
 from AIgle_Project.src.Navigation.Agents.Vector_DDQL_agent import Vector_DDQL_agent
-# from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
+from AIgle_Project.src.Navigation.Agents.Vector_DDPG_agent import Vector_DDPG_agent
 
 from AIgle_Project.src.Navigation.Tools.RL_results import RL_results
 
@@ -46,11 +46,11 @@ class RL_navigation:
         random.seed(10)
 
         # ---- Create agent
-        # settings.rl_behavior_settings.gen_ddql_settings()
-        # agent = Vector_DDQL_agent(client, "1")
+        settings.rl_behavior_settings.gen_ddql_settings()
+        agent = Vector_DDQL_agent(client, "1")
 
-        settings.rl_behavior_settings.gen_ddpg_settings()
-        agent = Vector_DDPG_agent(client, "1")
+        # settings.rl_behavior_settings.gen_ddpg_settings()
+        # agent = Vector_DDPG_agent(client, "1")
 
         # --> Initialise tools
         ml_tools = ML_tools()

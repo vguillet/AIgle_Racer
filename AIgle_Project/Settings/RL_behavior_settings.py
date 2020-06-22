@@ -21,8 +21,8 @@ class RL_behavior_settings:
     run_mode = 0
     def gen_ddql_settings(self):
         # ---- General run settings
-        self.run_name = "Run_11"
-        self.training_type = "Track"
+        self.run_name = "Run_FSFG"
+        self.training_type = "Door"
         self.algorithm = "DDQL"
         # ___________________________ Print/plot parameters ______________________
         # self.print_action_process = False
@@ -46,7 +46,7 @@ class RL_behavior_settings:
 
         # ___________________________ Main parameters ____________________________
         # ---- Run settings
-        self.epoques = 5_000
+        self.epoques = 1_000
 
         # ---- Stats settings
         # self.stats_sampling_rate = 100
@@ -69,7 +69,7 @@ class RL_behavior_settings:
         self.hard_update_target_every = None
 
         # ---- Exploration settings
-        self.epsilon = 15               # Probability (percent) of taking random action
+        self.epsilon = 20               # Probability (percent) of taking random action
 
         # ---- Decay settings
         self.decay_functions = ["Fixed value", "Linear decay", "Exponential decay", "Logarithmic decay"]

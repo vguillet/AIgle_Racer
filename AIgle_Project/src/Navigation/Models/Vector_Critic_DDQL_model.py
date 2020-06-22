@@ -49,17 +49,6 @@ class Vector_Critic_DDQL_model(DDQL_model):
 
         # --> Build model
         model = Model(inputs=input, outputs=output, name='AIgle_Racer_DDPG_critic_model')
-        model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
+        model.compile(loss="mse", optimizer=RMSprop(lr=0.001, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
         return model
-
-
-        # inputs = [Input(shape=state_shape), Input(shape=(action_dim,))]
-        # concat = Concatenate(axis=-1)(inputs)
-        # x = Dense(units[0], name="L0", activation='relu')(concat)
-        # for index in range(1, len(units)):
-        #     x = Dense(units[index], name="L{}".format(index), activation='relu')(x)
-        # output = Dense(1, name="Out")(x)
-        # model = Model(inputs=inputs, outputs=output)
-        #
-        # return model

@@ -43,8 +43,13 @@ class Vector_Actor_DDPG_model(DDQL_model):
         input = Input(shape=self.input_dims)
 
         # --> Setup network hidden structure
-        x = Dense(400, activation='relu')(input)
-        x = Dense(300, activation='relu')(x)
+        # x = Dense(400, activation='relu')(input)
+        # x = Dense(300, activation='relu')(x)
+
+        x = Dense(16, activation="relu", kernel_initializer='he_uniform')(input)
+        x = Dense(24, activation="relu", kernel_initializer='he_uniform')(x)
+        x = Dense(24, activation="relu", kernel_initializer='he_uniform')(x)
+        x = Dense(32, activation="relu", kernel_initializer='he_uniform')(x)
 
         # --> Setup output
         output = Dense(self.nb_action, activation='tanh')(x)
@@ -54,18 +59,3 @@ class Vector_Actor_DDPG_model(DDQL_model):
         # model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
         return model
-
-        # state = Input(shape=state_shape)
-        # x = Dense(units[0], name="L0", activation='relu')(state)
-        # for index in range(1, len(units)):
-        #     x = Dense(units[index], name="L{}".format(index), activation='relu')(x)
-        #
-        # unscaled_output = Dense(action_dim, name="Out", activation='tanh')(x)
-        # scalar = action_bound * np.ones(action_dim)
-        # output = Lambda(lambda op: op * scalar)(unscaled_output)
-        # if np.sum(action_shift) != 0:
-        #     output = Lambda(lambda op: op + action_shift)(output)  # for action range not centered at zero
-        #
-        # model = Model(inputs=state, outputs=output)
-        #
-        # return model

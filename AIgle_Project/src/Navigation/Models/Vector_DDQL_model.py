@@ -49,7 +49,7 @@ class Vector_DDQL_model(DDQL_model):
         X = Dense(16, activation="relu", kernel_initializer='he_uniform')(X)
 
         # Hidden layer with 256 nodes, relu activation
-        X = Dense(24, activation="relu", kernel_initializer='he_uniform')(X)
+        # X = Dense(24, activation="relu", kernel_initializer='he_uniform')(X)
 
         X = Dense(24, activation="relu", kernel_initializer='he_uniform')(X)
 
