@@ -1,0 +1,42 @@
+====================== Run_2 ======================
+
+~~~~~~~~~~~ Run configuration recap: ~~~~~~~~~~~
+Run name: Run_2
+
+-----------> RL main parameters:
+Algorithm type: DDQLEpoque count: 10000
+Starting model ref: None
+
+-----------> Replay memory parameters:
+Replay memory type:prioritizedReplay memory size:5000Min replay memory type:250
+Replay memory ref: None
+
+-----------> Learning parameters:
+Minibatch size =64Discount =0.75
+Tau =0.001Hard update weights: Disabled
+
+-----------> Exploration settings:
+Epsilon =15Random starting position =False
+
+-----------> Decay settings:
+Tau decay function: Fixed valueDiscount decay function: Fixed valueEpsilon decay function: Linear decay
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Run stats: 
+End time: 15:11:50 06/03/20 Romance Summer Time
+Run time: 1:51:37.007501s
+
+Average computing time per epoque: 0:00:00.669701s
+
+
+-----------> Rewards results:
+Max average reward achieved: -59.541
+Max individual reward achieved: 214.1678423689263
+
+Average reward best fit line gradient achieved: 2.132087086708673
+Individual reward best fit line gradient achieved: 2.800277436110726
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Validation benchmark results: 
+

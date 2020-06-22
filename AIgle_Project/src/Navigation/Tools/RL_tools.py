@@ -23,27 +23,28 @@ class RL_tools:
         return
 
     @staticmethod
-    def get_episode_parameters(episode, settings):
+    def get_epoque_parameters(epoque, settings):
         ml_tools = ML_tools()
 
-        # ----- Throttle learning rate
-        # Throttle (decrease) learning rate according to episode
-        learning_rate = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
-                                          settings.rl_behavior_settings.learning_rate, 0.99, 0.1,
-                                          settings.rl_behavior_settings.learning_rate_decay,
-                                          inverse=True, start_from_setting_value=True)
+        # ----- Throttle tau
+        # Throttle (decrease) tau according to epoque
+        tau = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques,
+                                settings.rl_behavior_settings.tau, 0.001, 0.0008,
+                                settings.rl_behavior_settings.tau_decay,
+                                inverse=True, start_from_setting_value=True)
+
         # ----- Throttle discount
-        # Throttle (increase) discount according to episode
-        discount = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
+        # Throttle (increase) discount according to epoque
+        discount = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques,
                                      settings.rl_behavior_settings.discount, 0.99, 0.1,
                                      settings.rl_behavior_settings.discount_decay,
                                      inverse=False, start_from_setting_value=True)
 
         # ----- Throttle epsilon
-        # Throttle (decrease) epsilon according to episode
-        epsilon = ml_tools.throttle(episode, settings.rl_behavior_settings.episodes,
-                                    settings.rl_behavior_settings.epsilon, 100, 0,
+        # Throttle (decrease) epsilon according to epoque
+        epsilon = ml_tools.throttle(epoque, settings.rl_behavior_settings.epoques-500,
+                                    settings.rl_behavior_settings.epsilon, 100, 5,
                                     settings.rl_behavior_settings.epsilon_decay,
                                     inverse=True, start_from_setting_value=True)
 
-        return learning_rate, discount, epsilon
+        return round(tau, 4), round(discount, 4), round(epsilon, 4)

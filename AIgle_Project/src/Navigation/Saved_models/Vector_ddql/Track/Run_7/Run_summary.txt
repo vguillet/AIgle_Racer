@@ -1,0 +1,42 @@
+====================== Run_7 ======================
+
+~~~~~~~~~~~ Run configuration recap: ~~~~~~~~~~~
+Run name: Run_7
+
+-----------> RL main parameters:
+Algorithm type: DDQLEpoque count: 5000
+Starting model ref:AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Track/Run_7/Vector_ddql_1100.h5
+
+-----------> Replay memory parameters:
+Replay memory type:prioritizedReplay memory size:5000Min replay memory type:250
+Replay memory ref: None
+
+-----------> Learning parameters:
+Minibatch size =32Discount =0.75
+Tau =0.001Hard update weights: Disabled
+
+-----------> Exploration settings:
+Epsilon =20Random starting position =False
+
+-----------> Decay settings:
+Tau decay function: Fixed valueDiscount decay function: Fixed valueEpsilon decay function: Linear decay
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Run stats: 
+End time: 17:29:37 06/08/20 Romance Summer Time
+Run time: 1:27:46.704504s
+
+Average computing time per epoque: 0:00:01.053341s
+
+
+-----------> Rewards results:
+Max average reward achieved: -160.11
+Max individual reward achieved: 449.84540583833177
+
+Average reward best fit line gradient achieved: 4.093948715486198
+Individual reward best fit line gradient achieved: 7.607785434594941
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Validation benchmark results: 
+

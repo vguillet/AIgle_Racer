@@ -1,0 +1,42 @@
+====================== Run_4 ======================
+
+~~~~~~~~~~~ Run configuration recap: ~~~~~~~~~~~
+Run name: Run_4
+
+-----------> RL main parameters:
+Algorithm type: DDQLEpoque count: 5000
+Starting model ref:AIgle_Project/src/Navigation/Saved_models/Vector_ddql/Door/Run_2/Vector_ddql_7800.h5
+
+-----------> Replay memory parameters:
+Replay memory type:prioritizedReplay memory size:5000Min replay memory type:250
+Replay memory ref: None
+
+-----------> Learning parameters:
+Minibatch size =32Discount =0.75
+Tau =0.003Hard update weights: Disabled
+
+-----------> Exploration settings:
+Epsilon =20Random starting position =False
+
+-----------> Decay settings:
+Tau decay function: Linear decayDiscount decay function: Fixed valueEpsilon decay function: Linear decay
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Run stats: 
+End time: 14:32:10 06/04/20 Romance Summer Time
+Run time: 1:21:31.584997s
+
+Average computing time per epoque: 0:00:00.978317s
+
+
+-----------> Rewards results:
+Max average reward achieved: -12.132
+Max individual reward achieved: 719.4507320798011
+
+Average reward best fit line gradient achieved: 5.6745032893157275
+Individual reward best fit line gradient achieved: 10.974026104374593
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------> Validation benchmark results: 
+

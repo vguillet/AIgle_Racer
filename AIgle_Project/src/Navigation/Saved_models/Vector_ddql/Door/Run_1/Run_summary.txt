@@ -1,0 +1,7 @@
+====================== Run_1 ======================
+
+~~~~~~~~~~~ Run configuration recap: ~~~~~~~~~~~
+Run name: Run_1
+
+-----------> RL main parameters:
+Algorithm type: DDPGEpoque count: 5000

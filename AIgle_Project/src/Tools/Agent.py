@@ -43,19 +43,38 @@ class Agent(object):
     def state(self):
         return self.client.getMultirotorState()
 
-    @property
-    def collision(self):
-        return self.client.simGetCollisionInfo().has_collided
-
     def move(self, new_state):
+        # --> Restart simulation
+        self.client.simPause(False)
+
         # --> Move drone to specified position
-        self.client.moveToPositionAsync(new_state[0][0],
-                                        new_state[0][1],
-                                        new_state[0][2],
-                                        new_state[1]
+        # self.client.moveToPositionAsync(new_state[0],   # x
+        #                                 new_state[1],   # y
+        #                                 new_state[2],   # z
+        #                                 new_state[3]
+        #                                 ).join()
+
+        self.client.moveToPositionAsync(new_state[0],   # x
+                                        new_state[1],   # y
+                                        new_state[2],   # z
+                                        3
                                         ).join()
 
+        # self.client.moveOnPathAsync([airsim.Vector3r(new_state[0],
+        #                                              new_state[1],
+        #                                              new_state[2])],
+        #                             3, 150,
+        #                             airsim.DrivetrainType.ForwardOnly,
+        #                             airsim.YawMode(False, 0), 20, 1).join()
+
+        # --> Pause simulation
+        self.client.simPause(True)
+        # time.sleep(1)
         return
+
+    @property
+    def check_final_state(self):
+        return self.client.simGetCollisionInfo().has_collided
 
     def reset(self, random_starting_pos=False):
         self.age = 0

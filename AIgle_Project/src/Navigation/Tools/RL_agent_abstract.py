@@ -42,5 +42,5 @@ class RL_agent_abc(ABC):
         return
 
     @abstractmethod
-    def train(self):
+    def train(self, discount, tau):
         return
