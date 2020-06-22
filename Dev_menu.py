@@ -5,16 +5,11 @@
 """
 
 # Built-in/Generic Imports
-import time
-import pprint
 
 # Libs
 import airsim
 
 # Own modules
-from AIgle_Project.src.State_estimation.Camera import Camera
-from AIgle_Project.src.State_estimation.Postprocessor import Postprocessor
-from AIgle_Project.src.Navigation.simple_predefined_flight import predefined_navigation
 from AIgle_Project.src.Navigation.RL_algorithm import RL_navigation
 
 __version__ = '1.1.1'

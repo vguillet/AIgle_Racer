@@ -46,11 +46,13 @@ class RL_navigation:
         random.seed(10)
 
         # ---- Create agent
-        settings.rl_behavior_settings.gen_ddql_settings()
-        agent = Vector_DDQL_agent(client, "1")
+        if settings.rl_behavior_settings.run_algorithm == "DDQL":
+            settings.rl_behavior_settings.gen_ddql_settings()
+            agent = Vector_DDQL_agent(client, "1")
 
-        # settings.rl_behavior_settings.gen_ddpg_settings()
-        # agent = Vector_DDPG_agent(client, "1")
+        elif settings.rl_behavior_settings.run_algorithm == "DDPG":
+            settings.rl_behavior_settings.gen_ddpg_settings()
+            agent = Vector_DDPG_agent(client, "1")
 
         # --> Initialise tools
         ml_tools = ML_tools()
@@ -73,7 +75,7 @@ class RL_navigation:
         client.simFlushPersistentMarkers()
 
         # ======================== PROCESS ==============================================
-        if settings.rl_behavior_settings.run_mode == 0:
+        if settings.rl_behavior_settings.run_mode == "Train":
             # --> Iterate over epoques
             for epoque in range(1, settings.rl_behavior_settings.epoques + 1):
                 epoque_bar.update_progress()
@@ -247,7 +249,7 @@ class RL_navigation:
             results.gen_result_recap_file()
 
         # ======================== Testing agent ==============================================
-        elif settings.rl_behavior_settings.run_mode == 1:
+        elif settings.rl_behavior_settings.run_mode == "Test":
             agent.reset(False, False)
 
             for i in range(len(agent.reward_function.goal_dict)):

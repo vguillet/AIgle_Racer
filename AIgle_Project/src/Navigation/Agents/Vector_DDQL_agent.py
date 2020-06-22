@@ -7,24 +7,20 @@
 # Built-in/Generic Imports
 import sys
 import random
-import time
 
 # Libs
 import numpy as np
-from collections import deque
-from itertools import combinations, permutations, product
+from itertools import combinations, product
 
 # Own modules
 from AIgle_Project.src.Navigation.Tools.RL_agent_abstract import RL_agent_abc
 from AIgle_Project.src.Tools.Agent import Agent
 
-from AIgle_Project.src.State_estimation.Camera import Camera
 from AIgle_Project.src.Navigation.Models.Vector_DDQL_model import Vector_DDQL_model
 
 from AIgle_Project.src.Navigation.Tools.Replay_memory import Replay_memory
 from AIgle_Project.src.Navigation.Tools.Prioritized_experience_replay_memory import Prioritized_experience_replay_memory
 
-from AIgle_Project.src.Navigation.Tools.Tensor_board_gen import ModifiedTensorBoard
 from AIgle_Project.src.Navigation.Tools.Door_reward_function_gen import Door_reward_function
 from AIgle_Project.src.Navigation.Tools.Track_reward_function_gen import Track_reward_function
 

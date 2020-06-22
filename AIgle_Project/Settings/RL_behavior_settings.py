@@ -18,11 +18,16 @@ __date__ = '7/02/2020'
 
 
 class RL_behavior_settings:
-    run_mode = 0
+    run_mode = "Train"
+    # run_mode = "Test"
+
+    run_algorithm = "DDQL"
+    # run_algorithm = "DDPG"
+
     def gen_ddql_settings(self):
         # ---- General run settings
         self.run_name = "Run_FSFG"
-        self.training_type = "Door"
+        self.training_type = "Track"     # Can be Door or Track
         self.algorithm = "DDQL"
         # ___________________________ Print/plot parameters ______________________
         # self.print_action_process = False
@@ -46,7 +51,7 @@ class RL_behavior_settings:
 
         # ___________________________ Main parameters ____________________________
         # ---- Run settings
-        self.epoques = 1_000
+        self.epoques = 10_000
 
         # ---- Stats settings
         # self.stats_sampling_rate = 100
@@ -83,7 +88,7 @@ class RL_behavior_settings:
     def gen_ddpg_settings(self):
         # ---- General run settings
         self.run_name = "Run_1"
-        self.training_type = "Door"
+        self.training_type = "Door"     # Can be Door or Track
         self.algorithm = "DDPG"
         # ___________________________ Print/plot parameters ______________________
         # self.print_action_process = False
