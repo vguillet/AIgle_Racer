@@ -20,10 +20,11 @@ The AIgle Racer is documented in four distinct reports, each compiled at various
   - Mid-term report: Explains the concepts elaboration and evaluation
   - Final report: Contains the detailed design, with the fully developed concept and instructions based on in-depth research.
 
-![](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_band.JPG)
+![](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_pane.png)
 
 ## AIgle Hardware
 The AIgle hardware folder contains all the information necessary for the production and assembly of the AIgle drone. To guide and facilitate the production, the following are provided:
+
   - Parts lists
   - 3D Catia models
   - Electrical diagrams
@@ -32,9 +33,11 @@ The AIgle hardware folder contains all the information necessary for the product
 > Note: The AIgle demonstration software can be found in AIgle_Project/src
 
 The AIgle Project src file contains all the demonstrations software provided to act as a baseline for building autonomous racing software to use with the AIgle racer platform. A general suggested pipeline is available in the documentation along with the result of research performed on the various methods and approach demonstrated.
+  - Machine Vision & State estimation: Focus on retrieving and processing sensor data to get an estimate of the position of the drone in 3D space
+  - Navigation: Focus on determining the path and trajectories to be followed by the drone during the race
+  - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands (subsequenctly sent to an electronic speed controller) 
 
-  - 
-
+![](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Code_pane.JPG)
 
 ## Acknowledgement
 The group would like to extend special thanks to Ir. C. De Wagter for his tremendous insight into drone racing, and for sharing his knowledge and experience in drone racing design. The group would also like to thank B. Mercier and Y. Zhang for their valuable advices and help during the design phase, and D. Martini for his important input throughout the project. The tutors and coaches have been present throughout the entire development of the project, and their contribution has proven essential to its success. 
