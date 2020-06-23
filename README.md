@@ -2,6 +2,8 @@
 
 ![cover](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Renders/DoorHighres.jpg?raw=true)
 
+> This project was developed during the 2019-2020 Fall DSE as part of the **TU Delft Aerspace Engineering Bachelor**.
+
 > This project was undertaken with the intention of paving the way to future drone racing endeavor, and facilitate AI research and development.
 
 > The design team consists of eleven Bachelor students working full time for 10 weeks. 
