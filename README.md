@@ -31,7 +31,7 @@ The AIgle hardware folder contains all the information necessary for the product
   - 3D Catia models
   - Custom PCB diagrams and description
   
-  ![doc](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_pane.png?raw=true)
+  ![doc](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Renders/Picture1.png?raw=true)
 
 ## AIgle Software
 > Note: The AIgle demonstration software can be found in AIgle_Project/src
@@ -45,6 +45,8 @@ The AIgle Project src file contains all the demonstrations software provided to 
     The navigation uses [Airsim](https://github.com/microsoft/AirSim) as training and testing environment
     
   - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands (subsequenctly sent to an electronic speed controller) 
+
+![doc](https://github.com/vguillet/AIgle_Racer/blob/master/Results/Screenshots/Multi_goal_randomised_start_1.png?raw=true)
 
 ## AIgle Concept Development Tools
 The concept evelopment tool folder contains the code which was used for desiging and sizing the drone. This includes:
