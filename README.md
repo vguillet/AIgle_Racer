@@ -37,8 +37,6 @@ The AIgle Project src file contains all the demonstrations software provided to 
   - Navigation: Focus on determining the path and trajectories to be followed by the drone during the race
   - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands (subsequenctly sent to an electronic speed controller) 
 
-![](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Code_pane.JPG)
-
 ## Acknowledgement
 The group would like to extend special thanks to Ir. C. De Wagter for his tremendous insight into drone racing, and for sharing his knowledge and experience in drone racing design. The group would also like to thank B. Mercier and Y. Zhang for their valuable advices and help during the design phase, and D. Martini for his important input throughout the project. The tutors and coaches have been present throughout the entire development of the project, and their contribution has proven essential to its success. 
 
