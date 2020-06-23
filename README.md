@@ -35,7 +35,9 @@ The AIgle hardware folder contains all the information necessary for the product
 The AIgle Project src file contains all the demonstrations software provided to act as a baseline for building autonomous racing software to use with the AIgle racer platform. A general suggested pipeline is available in the documentation along with the result of research performed on the various methods and approach demonstrated.
   - Machine Vision & State estimation: Focus on retrieving and processing sensor data to get an estimate of the position of the drone in 3D space
   - Navigation: Focus on determining the path and trajectories to be followed by the drone during the race.
-    Algorithms available: DDQN, DDPG
+  
+    Algorithms available: **DDQN**, **DDPG**
+    
   - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands (subsequenctly sent to an electronic speed controller) 
 
 ## AIgle Concept Development Tools
