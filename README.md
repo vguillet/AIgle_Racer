@@ -1,6 +1,6 @@
 # AIgle Racer Project
 
-!["The next generation of autonomous racing: Project AIgle "](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Hardware_renders/DoorHighres.jpg)
+![](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Hardware_renders/DoorHighres.jpg)
 
 > This project was undertaken with the intention of paving the way to future drone racing endeavor, and facilitate AI research and development.
 
