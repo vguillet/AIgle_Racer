@@ -1,5 +1,7 @@
 # AIgle Racer Project
 
+[![Reward plot of Pendulum problem](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Hardware_renders/BlackHighre.jpg "The next generation of autonomous racing: Project AIgle ")](http://https://github.com/Dekki-Aero/DDPG/blob/master/DDPG-Pendulum_Performance.png "Reward plot of Pendulum problem")
+
 > This project was undertaken with the intention of paving the way to future drone racing endeavor, and facilitate AI research and development.
 
 > The design team consists of eleven Bachelor students working full time for 10 weeks. 
