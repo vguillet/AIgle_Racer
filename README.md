@@ -13,13 +13,14 @@ The essence of these competition has however remained the same. Teams compete to
 This repository contains all the information and results necessary to get started with the AIgle Racer platform. 
 
 ## AIgle Documentation
-[![Reward plot of Pendulum problem](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_preview.JPG "The next generation of autonomous racing: Project AIgle ")](http://https://github.com/Dekki-Aero/DDPG/blob/master/DDPG-Pendulum_Performance.png "Reward plot of Pendulum problem")
 
 The AIgle Racer is documented in four distinct reports, each compiled at various stages of progress of the project.
   - Project plan: Depicts the initial organisation of the project
   - Baseline report: Describes the structuration of the research and development based on preliminary research,
   - Mid-term report: Explains the concepts elaboration and evaluation
   - Final report: Contains the detailed design, with the fully developed concept and instructions based on in-depth research.
+
+![](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_band.JPG)
 
 ## AIgle Hardware
 The AIgle hardware folder contains all the information necessary for the production and assembly of the AIgle drone. To guide and facilitate the production, the following are provided:
