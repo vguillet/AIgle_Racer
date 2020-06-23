@@ -42,8 +42,8 @@ The AIgle Project src file contains all the demonstrations software provided to 
 
 ## AIgle Concept Development Tools
 The concept evelopment tool folder contains the code which was used for desiging and sizing the drone. This includes:
-  - Obtain suitable battery/motor/propelor triplets based on different input criterias
-  - Vertification code, to be used with [eCalc](https://ecalc.ch/xcoptercalc.php)
+  - Propulsion: Contains the tools used to obtain suitable battery/motor/propelor triplets based on different input criterias. Vertification code is also included, to be used with [eCalc](https://ecalc.ch/xcoptercalc.php)
+  - Structures:
 
 ## Acknowledgement
 The group would like to extend special thanks to Ir. C. De Wagter for his tremendous insight into drone racing, and for sharing his knowledge and experience in drone racing design. The group would also like to thank B. Mercier and Y. Zhang for their valuable advices and help during the design phase, and D. Martini for his important input throughout the project. The tutors and coaches have been present throughout the entire development of the project, and their contribution has proven essential to its success. 
