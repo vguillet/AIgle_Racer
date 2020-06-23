@@ -1,6 +1,6 @@
 # AIgle Racer Project
 
-![cover](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Renders/DoorHighres.jpg)
+![cover](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Renders/DoorHighres.jpg?raw=true)
 
 > This project was undertaken with the intention of paving the way to future drone racing endeavor, and facilitate AI research and development.
 
