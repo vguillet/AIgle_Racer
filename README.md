@@ -2,7 +2,7 @@
 
 ![cover](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Hardware/Renders/DoorHighres.jpg?raw=true)
 
-> This project was developed during the 2019-2020 Spring DSE as part of the **TU Delft Aerspace Engineering Bachelor**.
+> This project was developed during the 2019-2020 Fall DSE as part of the **TU Delft Aerspace Engineering Bachelor**.
 
 > This project was undertaken with the intention of paving the way to future drone racing endeavor, and facilitate AI research and development.
 
@@ -30,6 +30,8 @@ The AIgle hardware folder contains all the information necessary for the product
   - Parts lists
   - 3D Catia models
   - Custom PCB diagrams and description
+  
+  ![doc](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_pane.png?raw=true)
 
 ## AIgle Software
 > Note: The AIgle demonstration software can be found in AIgle_Project/src
@@ -40,7 +42,9 @@ The AIgle Project src file contains all the demonstrations software provided to 
   
     Algorithms available: **DDQN**, **DDPG**
     
-  - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands subsequenctly sent to an electronic flight controller board. 
+    The navigation uses [Airsim](https://github.com/microsoft/AirSim) as training and testing environment
+    
+  - Control & stability: Focus on translating the desired drone movement (control position, velocities, attitude) into commands (subsequenctly sent to an electronic speed controller) 
 
 ## AIgle Concept Development Tools
 The concept evelopment tool folder contains the code which was used for desiging and sizing the drone. This includes:
