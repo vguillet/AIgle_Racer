@@ -14,6 +14,8 @@ The essence of these competition has however remained the same. Teams compete to
 
 This repository contains all the information and results necessary to get started with the AIgle Racer platform. 
 
+![doc](https://github.com/vguillet/AIgle_Racer/blob/master/AIgle_Documentation/Final_poster.jpeg?raw=true)
+
 ## AIgle Documentation
 
 The AIgle Racer is documented in four distinct reports, each compiled at various stages of progress of the project.
