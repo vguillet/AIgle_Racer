@@ -24,6 +24,8 @@ The AIgle Racer is documented in four distinct reports, each compiled at various
   - Mid-term report: Explains the concepts elaboration and evaluation
   - Final report: Contains the detailed design, with the fully developed concept and instructions based on in-depth research.
 
+![doc](https://github.com/vguillet/AIgle_Racer/blob/master/Misc/Documentation_pane.png?raw=true)
+
 ## AIgle Hardware
 The AIgle hardware folder contains all the information necessary for the production and assembly of the AIgle drone. To guide and facilitate the production, the following are provided:
 
